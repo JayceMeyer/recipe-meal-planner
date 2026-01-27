@@ -1,0 +1,35 @@
+import { NavLink } from 'react-router-dom'
+import { Home, BookOpen, ShoppingCart, User, FolderOpen } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const navItems = [
+  { to: '/', icon: Home, label: 'Home' },
+  { to: '/recipes', icon: BookOpen, label: 'Recipes' },
+  { to: '/groups', icon: FolderOpen, label: 'Groups' },
+  { to: '/grocery', icon: ShoppingCart, label: 'Grocery' },
+  { to: '/profile', icon: User, label: 'Profile' },
+]
+
+export function SideNav() {
+  return (
+    <aside className="hidden md:flex w-64 flex-col border-r bg-background">
+      <nav className="flex flex-col gap-1 p-4">
+        {navItems.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                isActive && 'bg-accent text-accent-foreground'
+              )
+            }
+          >
+            <Icon className="h-5 w-5" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
+  )
+}
