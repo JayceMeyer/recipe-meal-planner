@@ -1,11 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react'
 import { useGroceryLists } from '@/hooks/useGroceryLists'
 import { useGroceryItems } from '@/hooks/useGroceryItems'
+import { useRecipeSuggestions } from '@/hooks/useRecipeSuggestions'
+import { useAlmostMakeableRecipes } from '@/hooks/useAlmostMakeableRecipes'
 import { GroceryItem } from '@/components/GroceryItem'
 import { ExportGroceryList } from '@/components/ExportGroceryList'
 import { InstacartExport } from '@/components/InstacartExport'
+import { RecipeSuggestions } from '@/components/RecipeSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient, getCategoryOrder, CATEGORIES } from '@/utils/ingredientCategories'
@@ -22,6 +25,9 @@ export function GroceryListDetail() {
   const { lists, loading: listsLoading } = useGroceryLists()
   const { items, loading: itemsLoading, toggleChecked, updateItem, deleteItem, addItem } =
     useGroceryItems(id)
+  const { suggestions, loading: suggestionsLoading } = useRecipeSuggestions(id)
+  const { almostMakeable, addMissingIngredients, loading: almostLoading } =
+    useAlmostMakeableRecipes(id)
 
   const [newItemName, setNewItemName] = useState('')
   const [adding, setAdding] = useState(false)
@@ -30,6 +36,19 @@ export function GroceryListDetail() {
 
   const list = lists.find((l) => l.id === id)
   const loading = listsLoading || itemsLoading
+  const suggestionsReady = !suggestionsLoading && !almostLoading
+
+  // Filter for fully-makeable recipes (100% match)
+  const canMakeRecipes = useMemo(() => {
+    return suggestions.filter((s) => s.missingCount === 0)
+  }, [suggestions])
+
+  const handleAddMissing = useCallback(
+    async (result: Parameters<typeof addMissingIngredients>[0]) => {
+      await addMissingIngredients(result)
+    },
+    [addMissingIngredients]
+  )
 
   const { uncheckedGroups, checkedItems } = useMemo(() => {
     const unchecked = items.filter((item) => !item.checked)
@@ -144,6 +163,15 @@ export function GroceryListDetail() {
       </div>
 
       <div className="container mt-4">
+        {items.length > 0 && (
+          <RecipeSuggestions
+            canMake={canMakeRecipes}
+            almostReady={almostMakeable}
+            onAddMissing={handleAddMissing}
+            loading={!suggestionsReady}
+          />
+        )}
+
         {items.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No items in this list yet.</p>
