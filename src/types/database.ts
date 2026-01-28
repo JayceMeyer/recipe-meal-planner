@@ -143,6 +143,86 @@ export interface Database {
           }
         ]
       }
+      grocery_lists: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'grocery_lists_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      grocery_items: {
+        Row: {
+          id: string
+          list_id: string
+          ingredient_name: string
+          quantity: string | null
+          unit: string | null
+          checked: boolean
+          source_recipe_id: string | null
+          category: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          list_id: string
+          ingredient_name: string
+          quantity?: string | null
+          unit?: string | null
+          checked?: boolean
+          source_recipe_id?: string | null
+          category?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          list_id?: string
+          ingredient_name?: string
+          quantity?: string | null
+          unit?: string | null
+          checked?: boolean
+          source_recipe_id?: string | null
+          category?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'grocery_items_list_id_fkey'
+            columns: ['list_id']
+            referencedRelation: 'grocery_lists'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'grocery_items_source_recipe_id_fkey'
+            columns: ['source_recipe_id']
+            referencedRelation: 'recipes'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -178,3 +258,11 @@ export type RecipeGroupUpdate = TablesUpdate<'recipe_groups'>
 
 export type RecipeGroupItem = Tables<'recipe_group_items'>
 export type RecipeGroupItemInsert = TablesInsert<'recipe_group_items'>
+
+export type GroceryList = Tables<'grocery_lists'>
+export type GroceryListInsert = TablesInsert<'grocery_lists'>
+export type GroceryListUpdate = TablesUpdate<'grocery_lists'>
+
+export type GroceryItem = Tables<'grocery_items'>
+export type GroceryItemInsert = TablesInsert<'grocery_items'>
+export type GroceryItemUpdate = TablesUpdate<'grocery_items'>

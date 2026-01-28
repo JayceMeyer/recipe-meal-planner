@@ -12,6 +12,7 @@ import { useRecipe } from '@/hooks/useRecipe'
 import { useServingCalculator } from '@/hooks/useServingCalculator'
 import { ServingAdjuster } from '@/components/ServingAdjuster'
 import { RecipeNotes } from '@/components/RecipeNotes'
+import { AddToGroceryList } from '@/components/AddToGroceryList'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -158,7 +159,13 @@ export function RecipeDetail() {
           <div className="space-y-8 mt-6">
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Ingredients</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">Ingredients</h2>
+                  <AddToGroceryList
+                    recipeId={recipe.id}
+                    ingredients={scaledIngredients}
+                  />
+                </div>
                 {recipe.servings && (
                   <ServingAdjuster
                     currentServings={currentServings}
@@ -172,12 +179,19 @@ export function RecipeDetail() {
               </div>
               <ul className="space-y-2">
                 {scaledIngredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <span className="size-2 rounded-full bg-primary mt-2 shrink-0" />
-                    <span>
+                  <li key={index} className="flex items-center gap-3 group">
+                    <span className="size-2 rounded-full bg-primary shrink-0" />
+                    <span className="flex-1">
                       {ingredient.amount && `${ingredient.amount} `}
                       {ingredient.unit && `${ingredient.unit} `}
                       {ingredient.name}
+                    </span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <AddToGroceryList
+                        recipeId={recipe.id}
+                        ingredients={scaledIngredients}
+                        singleIngredient={ingredient}
+                      />
                     </span>
                   </li>
                 ))}

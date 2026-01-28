@@ -10,6 +10,7 @@ import { RecipeDetail } from '@/pages/RecipeDetail'
 import { RecipeForm } from '@/pages/RecipeForm'
 import { AddRecipe } from '@/pages/AddRecipe'
 import { Grocery } from '@/pages/Grocery'
+import { GroceryListDetail } from '@/pages/GroceryListDetail'
 import { Profile } from '@/pages/Profile'
 import { Groups } from '@/pages/Groups'
 
@@ -34,6 +35,7 @@ function App() {
             <Route path="/recipes/:id" element={<RecipeDetail />} />
             <Route path="/recipes/:id/edit" element={<RecipeForm />} />
             <Route path="/grocery" element={<Grocery />} />
+            <Route path="/grocery/:id" element={<GroceryListDetail />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
