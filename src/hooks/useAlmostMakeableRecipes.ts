@@ -26,7 +26,7 @@ export function useAlmostMakeableRecipes(
 ): UseAlmostMakeableRecipesResult {
   const { recipes, loading: recipesLoading, error: recipesError } = useRecipes()
   const { items, loading: itemsLoading, error: itemsError } = useGroceryItems(listId)
-  const { addIngredient } = useAddToGroceryList(listId)
+  const { addIngredient } = useAddToGroceryList()
 
   const loading = recipesLoading || itemsLoading
   const error = recipesError || itemsError
@@ -47,7 +47,7 @@ export function useAlmostMakeableRecipes(
 
       try {
         for (const ingredient of recipeResult.missingIngredients) {
-          await addIngredient(ingredient, recipeResult.recipe.id)
+          await addIngredient(listId, ingredient, recipeResult.recipe.id)
         }
         return true
       } catch {
