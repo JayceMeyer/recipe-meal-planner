@@ -223,7 +223,6 @@ export interface Database {
           }
         ]
       }
-    }
       pantry_items: {
         Row: {
           id: string
