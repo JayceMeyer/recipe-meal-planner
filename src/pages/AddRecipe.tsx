@@ -15,11 +15,72 @@ function parseServings(yields: string | null): number | null {
   return match ? parseInt(match[0], 10) : null
 }
 
+const KNOWN_UNITS = new Set([
+  'cup', 'cups', 'c',
+  'tablespoon', 'tablespoons', 'tbsp', 'tbs',
+  'teaspoon', 'teaspoons', 'tsp',
+  'ounce', 'ounces', 'oz',
+  'pound', 'pounds', 'lb', 'lbs',
+  'gram', 'grams', 'g',
+  'kilogram', 'kilograms', 'kg',
+  'milliliter', 'milliliters', 'ml',
+  'liter', 'liters', 'l',
+  'quart', 'quarts', 'qt',
+  'pint', 'pints', 'pt',
+  'gallon', 'gallons', 'gal',
+  'pinch', 'pinches',
+  'dash', 'dashes',
+  'clove', 'cloves',
+  'can', 'cans',
+  'package', 'packages', 'pkg',
+  'bunch', 'bunches',
+  'slice', 'slices',
+  'piece', 'pieces',
+  'stick', 'sticks',
+  'head', 'heads',
+  'sprig', 'sprigs',
+  'handful', 'handfuls',
+  'bag', 'bags',
+  'jar', 'jars',
+  'bottle', 'bottles',
+])
+
+const AMOUNT_PATTERN = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d+\.?\d*\s*[½⅓⅔¼¾⅛⅜⅝⅞]|\d+\.?\d*|[½⅓⅔¼¾⅛⅜⅝⅞])\s*/
+
+function parseIngredientString(raw: string): Ingredient {
+  let remaining = raw.trim()
+  let amount = ''
+  let unit: string | undefined
+
+  const amountMatch = remaining.match(AMOUNT_PATTERN)
+  if (amountMatch) {
+    amount = amountMatch[1].trim()
+    remaining = remaining.slice(amountMatch[0].length).trim()
+  }
+
+  // Remove parenthetical sizes like "(14 ounce)" before unit matching
+  remaining = remaining.replace(/\(\d+[\s.]*(?:ounce|oz|gram|g|ml|liter|l)\)\s*/i, '').trim()
+
+  if (amount) {
+    const words = remaining.split(/\s+/)
+    const candidate = words[0]?.toLowerCase().replace(/[.,]$/, '')
+    if (candidate && KNOWN_UNITS.has(candidate)) {
+      unit = words[0].replace(/[.,]$/, '')
+      remaining = words.slice(1).join(' ').trim()
+    }
+  }
+
+  remaining = remaining.replace(/^of\s+/i, '').replace(/^,\s*/, '').trim()
+
+  return {
+    name: remaining || raw.trim(),
+    amount,
+    unit,
+  }
+}
+
 function parseIngredients(ingredients: string[]): Ingredient[] {
-  return ingredients.map((ing) => ({
-    name: ing,
-    amount: '',
-  }))
+  return ingredients.map(parseIngredientString)
 }
 
 function parseSteps(instructions: string[]): Step[] {
