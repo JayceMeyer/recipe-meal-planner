@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Loader2, Plus, Package } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
+import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
 import { PantryItem } from '@/components/PantryItem'
+import { RecipeSuggestions } from '@/components/RecipeSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient, getCategoryOrder, CATEGORIES } from '@/utils/ingredientCategories'
@@ -14,6 +16,7 @@ interface GroupedItems {
 
 export function Pantry() {
   const { items, loading, error, addItem, updateItem, deleteItem } = usePantryItems()
+  const { canMake, almostMakeable, loading: suggestionsLoading } = usePantrySuggestions()
 
   const [newItemName, setNewItemName] = useState('')
   const [adding, setAdding] = useState(false)
@@ -113,6 +116,14 @@ export function Pantry() {
           <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md mb-4">
             {error}
           </div>
+        )}
+
+        {items.length > 0 && (
+          <RecipeSuggestions
+            canMake={canMake}
+            almostReady={almostMakeable}
+            loading={suggestionsLoading}
+          />
         )}
 
         {items.length === 0 ? (
