@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, ClipboardCopy, Loader2 } from 'lucide-react'
+import { Check, ClipboardCopy, Loader2, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { formatGroceryList, copyToClipboard } from '@/utils/groceryListFormatter'
+import { usePantryItems } from '@/hooks/usePantryItems'
 import type { GroceryItem } from '@/types/database'
 
 interface ExportGroceryListProps {
@@ -19,7 +20,9 @@ interface ExportGroceryListProps {
 export function ExportGroceryList({ items }: ExportGroceryListProps) {
   const [copying, setCopying] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [addedToPantry, setAddedToPantry] = useState(false)
   const [includeChecked, setIncludeChecked] = useState(false)
+  const { addItems } = usePantryItems()
 
   const handleExport = async () => {
     const text = formatGroceryList(items, { includeChecked })
@@ -35,6 +38,24 @@ export function ExportGroceryList({ items }: ExportGroceryListProps) {
     if (success) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleAddToPantry = async () => {
+    const itemsToAdd = includeChecked ? items : items.filter((i) => !i.checked)
+    if (itemsToAdd.length === 0) return
+
+    const success = await addItems(
+      itemsToAdd.map((i) => ({
+        ingredient_name: i.ingredient_name,
+        quantity: i.quantity || undefined,
+        unit: i.unit || undefined,
+      }))
+    )
+
+    if (success) {
+      setAddedToPantry(true)
+      setTimeout(() => setAddedToPantry(false), 2000)
     }
   }
 
@@ -81,6 +102,19 @@ export function ExportGroceryList({ items }: ExportGroceryListProps) {
         <DropdownMenuItem onClick={handleExport} disabled={copying}>
           <ClipboardCopy className="size-4" />
           Copy to clipboard
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleAddToPantry}>
+          {addedToPantry ? (
+            <>
+              <Check className="size-4 text-green-500" />
+              Added to pantry!
+            </>
+          ) : (
+            <>
+              <Package className="size-4" />
+              Add to pantry
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
