@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Copy, Check, X, UserMinus, Send, Pencil, Users } from 'lucide-react'
+import { Copy, Check, X, UserMinus, Send, Pencil, Users, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 
 export function HouseholdSection() {
   const { user } = useAuth()
-  const { household, members, isOwner, refreshMembers } = useHousehold()
+  const { household, members, loading, isOwner, refreshMembers, createHousehold } = useHousehold()
   const { invites, createInvite, cancelInvite } = useHouseholdInvites()
 
   const [inviteEmail, setInviteEmail] = useState('')
@@ -19,8 +19,52 @@ export function HouseholdSection() {
   const [editingName, setEditingName] = useState(false)
   const [householdName, setHouseholdName] = useState('')
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
-  if (!household) return null
+  if (!household) {
+    if (loading) return null
+
+    const handleCreate = async () => {
+      setCreating(true)
+      setCreateError(null)
+      try {
+        await createHousehold()
+      } catch {
+        setCreateError('Failed to create household. Please try again.')
+      } finally {
+        setCreating(false)
+      }
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Household
+          </CardTitle>
+          <CardDescription>
+            Share your recipes, grocery lists, and pantry with household members
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            You don't have a household yet. Create one to start sharing with others.
+          </p>
+          {createError && (
+            <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+              {createError}
+            </div>
+          )}
+          <Button onClick={handleCreate} disabled={creating}>
+            {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Create Household
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const handleInvite = async (e: FormEvent) => {
     e.preventDefault()

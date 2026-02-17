@@ -9,6 +9,7 @@ interface HouseholdContextType {
   loading: boolean
   isOwner: boolean
   refreshMembers: () => void
+  createHousehold: () => Promise<void>
 }
 
 const HouseholdContext = createContext<HouseholdContextType | undefined>(undefined)
@@ -82,8 +83,32 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     setRefreshKey(k => k + 1)
   }, [])
 
+  const createHousehold = useCallback(async () => {
+    if (!user) return
+
+    const { data: newHousehold, error: householdError } = await supabase
+      .from('households')
+      .insert({ name: 'My Kitchen', created_by: user.id })
+      .select()
+      .single()
+
+    if (householdError || !newHousehold) return
+
+    const { error: memberError } = await supabase
+      .from('household_members')
+      .insert({
+        household_id: newHousehold.id,
+        user_id: user.id,
+        role: 'owner',
+      })
+
+    if (memberError) return
+
+    setRefreshKey(k => k + 1)
+  }, [user])
+
   return (
-    <HouseholdContext.Provider value={{ household, members, loading, isOwner, refreshMembers }}>
+    <HouseholdContext.Provider value={{ household, members, loading, isOwner, refreshMembers, createHousehold }}>
       {children}
     </HouseholdContext.Provider>
   )
