@@ -13,6 +13,7 @@ import { Grocery } from '@/pages/Grocery'
 import { GroceryListDetail } from '@/pages/GroceryListDetail'
 import { Profile } from '@/pages/Profile'
 import { Groups } from '@/pages/Groups'
+import { Pantry } from '@/pages/Pantry'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             <Route path="/recipes/:id/edit" element={<RecipeForm />} />
             <Route path="/grocery" element={<Grocery />} />
             <Route path="/grocery/:id" element={<GroceryListDetail />} />
+            <Route path="/pantry" element={<Pantry />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
