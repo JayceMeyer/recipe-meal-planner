@@ -4,6 +4,7 @@ import { Plus, Search, Loader2, UtensilsCrossed, Filter, X } from 'lucide-react'
 import { useRecipes } from '@/hooks/useRecipes'
 import { useGroups, useAllRecipeGroups } from '@/hooks/useGroups'
 import { RecipeCard } from '@/components/RecipeCard'
+import { ManageGroupsButton } from '@/components/ManageGroupsDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -91,6 +92,7 @@ export function Recipes() {
           {groups.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <Filter className="size-4 text-muted-foreground" />
+              <ManageGroupsButton />
               <button
                 type="button"
                 onClick={() => setSelectedGroupId(null)}

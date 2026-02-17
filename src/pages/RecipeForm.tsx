@@ -1,8 +1,10 @@
-import { type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
 import { useRecipeForm } from '@/hooks/useRecipeForm'
+import { useGroups, useRecipeGroups } from '@/hooks/useGroups'
+import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,12 +64,31 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
     isValid,
   } = useRecipeForm(recipe ?? undefined)
 
+  const { groups, createGroup } = useGroups()
+  const { groupIds: existingGroupIds, loading: groupsLoading, setGroups: saveGroupAssignments } = useRecipeGroups(recipe?.id)
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+
+  useEffect(() => {
+    if (isEditMode && !groupsLoading) {
+      setSelectedGroupIds(existingGroupIds)
+    }
+  }, [isEditMode, groupsLoading, existingGroupIds])
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const savedId = await save()
-    if (savedId) {
-      navigate(`/recipes/${savedId}`)
+    if (!savedId) return
+
+    if (isEditMode) {
+      await saveGroupAssignments(selectedGroupIds)
+    } else if (selectedGroupIds.length > 0) {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase
+        .from('recipe_group_items')
+        .insert(selectedGroupIds.map((groupId) => ({ recipe_id: savedId, group_id: groupId })))
     }
+
+    navigate(`/recipes/${savedId}`)
   }
 
   return (
@@ -188,6 +209,16 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
                 value={formData.source_url}
                 onChange={(e) => updateField('source_url', e.target.value)}
                 placeholder="https://example.com/recipe"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Groups</label>
+              <GroupSelector
+                groups={groups}
+                selectedIds={selectedGroupIds}
+                onSelectionChange={setSelectedGroupIds}
+                onCreateGroup={createGroup}
               />
             </div>
 

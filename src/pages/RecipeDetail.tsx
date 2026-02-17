@@ -6,13 +6,17 @@ import {
   Edit,
   ExternalLink,
   Loader2,
+  Plus,
   Trash2,
 } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
+import { useGroups, useRecipeGroups } from '@/hooks/useGroups'
 import { useServingCalculator } from '@/hooks/useServingCalculator'
 import { ServingAdjuster } from '@/components/ServingAdjuster'
 import { RecipeNotes } from '@/components/RecipeNotes'
 import { AddToGroceryList } from '@/components/AddToGroceryList'
+import { GroupBadge } from '@/components/GroupBadge'
+import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,8 +31,13 @@ export function RecipeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { recipe, loading, error, deleteRecipe } = useRecipe(id)
+  const { groups } = useGroups()
+  const { groupIds, setGroups: saveGroups } = useRecipeGroups(id)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showGroupEditor, setShowGroupEditor] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  const recipeGroups = groups.filter((g) => groupIds.includes(g.id))
 
   const {
     currentServings,
@@ -126,7 +135,7 @@ export function RecipeDetail() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
               {totalTime && (
                 <div className="flex items-center gap-1">
                   <Clock className="size-4" />
@@ -149,6 +158,20 @@ export function RecipeDetail() {
                   <span>Source</span>
                 </a>
               )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 mb-6">
+              {recipeGroups.map((group) => (
+                <GroupBadge key={group.id} name={group.name} />
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowGroupEditor(true)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                <Plus className="size-3" />
+                {recipeGroups.length === 0 ? 'Add to group' : 'Edit'}
+              </button>
             </div>
 
             {recipe.description && (
@@ -257,6 +280,48 @@ export function RecipeDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <GroupEditorDialog
+        open={showGroupEditor}
+        onOpenChange={setShowGroupEditor}
+        groups={groups}
+        selectedIds={groupIds}
+        onSelectionChange={saveGroups}
+      />
     </div>
+  )
+}
+
+function GroupEditorDialog({
+  open,
+  onOpenChange,
+  groups,
+  selectedIds,
+  onSelectionChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  groups: ReturnType<typeof useGroups>['groups']
+  selectedIds: string[]
+  onSelectionChange: (ids: string[]) => Promise<boolean>
+}) {
+  const { createGroup } = useGroups()
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Groups</DialogTitle>
+        </DialogHeader>
+        <GroupSelector
+          groups={groups}
+          selectedIds={selectedIds}
+          onSelectionChange={(newIds) => {
+            onSelectionChange(newIds)
+          }}
+          onCreateGroup={createGroup}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }

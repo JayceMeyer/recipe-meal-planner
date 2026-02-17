@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useScrapeRecipe } from '@/hooks/useScrapeRecipe'
+import { useGroups } from '@/hooks/useGroups'
 import { supabase } from '@/lib/supabase'
+import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -95,9 +97,11 @@ export function AddRecipe() {
   const [titleOverride, setTitleOverride] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
 
   const { user } = useAuth()
   const { scrape, recipe, loading, error, reset } = useScrapeRecipe()
+  const { groups, createGroup } = useGroups()
   const navigate = useNavigate()
 
   const effectiveTitle = titleOverride ?? recipe?.title ?? ''
@@ -125,22 +129,32 @@ export function AddRecipe() {
       steps: parseSteps(recipe.instructions),
     }
 
-    const { error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
       .from('recipes')
       .insert(recipeData)
+      .select('id')
+      .single()
 
     if (insertError) {
       setSaveError(insertError.message)
       setSaving(false)
-    } else {
-      navigate('/recipes')
+      return
     }
+
+    if (selectedGroupIds.length > 0) {
+      await supabase
+        .from('recipe_group_items')
+        .insert(selectedGroupIds.map((groupId) => ({ recipe_id: data.id, group_id: groupId })))
+    }
+
+    navigate('/recipes')
   }
 
   const handleReset = () => {
     setUrl('')
     setTitleOverride(null)
     setSaveError(null)
+    setSelectedGroupIds([])
     reset()
   }
 
@@ -260,6 +274,16 @@ export function AddRecipe() {
                     </li>
                   )}
                 </ol>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Add to Groups (optional)</h3>
+                <GroupSelector
+                  groups={groups}
+                  selectedIds={selectedGroupIds}
+                  onSelectionChange={setSelectedGroupIds}
+                  onCreateGroup={createGroup}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex gap-2">
