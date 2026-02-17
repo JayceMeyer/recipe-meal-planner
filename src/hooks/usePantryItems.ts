@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import type { PantryItem } from '@/types/database'
 import { categorizeIngredient } from '@/utils/ingredientCategories'
 
@@ -20,6 +21,7 @@ export function usePantryItems(): UsePantryItemsResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const { household } = useHousehold()
   const isMounted = useRef(true)
 
   const fetchItems = useCallback(async () => {
@@ -35,7 +37,6 @@ export function usePantryItems(): UsePantryItemsResult {
     const { data, error: fetchError } = await supabase
       .from('pantry_items')
       .select('*')
-      .eq('user_id', user.id)
       .order('category', { ascending: true })
       .order('ingredient_name', { ascending: true })
 
@@ -61,7 +62,7 @@ export function usePantryItems(): UsePantryItemsResult {
 
   const addItem = useCallback(
     async (ingredientName: string, quantity?: string, unit?: string): Promise<PantryItem | null> => {
-      if (!user) return null
+      if (!user || !household) return null
 
       const category = categorizeIngredient(ingredientName)
 
@@ -69,6 +70,7 @@ export function usePantryItems(): UsePantryItemsResult {
         .from('pantry_items')
         .insert({
           user_id: user.id,
+          household_id: household.id,
           ingredient_name: ingredientName,
           quantity: quantity || null,
           unit: unit || null,
@@ -85,7 +87,7 @@ export function usePantryItems(): UsePantryItemsResult {
       setItems((prev) => [...prev, data])
       return data
     },
-    [user]
+    [user, household]
   )
 
   const updateItem = useCallback(
@@ -131,10 +133,11 @@ export function usePantryItems(): UsePantryItemsResult {
 
   const addItems = useCallback(
     async (newItems: { ingredient_name: string; quantity?: string; unit?: string }[]): Promise<boolean> => {
-      if (!user || newItems.length === 0) return false
+      if (!user || !household || newItems.length === 0) return false
 
       const rows = newItems.map((item) => ({
         user_id: user.id,
+        household_id: household.id,
         ingredient_name: item.ingredient_name,
         quantity: item.quantity || null,
         unit: item.unit || null,
@@ -154,7 +157,7 @@ export function usePantryItems(): UsePantryItemsResult {
       setItems((prev) => [...prev, ...(data ?? [])])
       return true
     },
-    [user]
+    [user, household]
   )
 
   return {

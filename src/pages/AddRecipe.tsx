@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import { useScrapeRecipe } from '@/hooks/useScrapeRecipe'
 import { useGroups } from '@/hooks/useGroups'
 import { supabase } from '@/lib/supabase'
@@ -100,6 +101,7 @@ export function AddRecipe() {
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
 
   const { user } = useAuth()
+  const { household } = useHousehold()
   const { scrape, recipe, loading, error, reset } = useScrapeRecipe()
   const { groups, createGroup } = useGroups()
   const navigate = useNavigate()
@@ -113,13 +115,14 @@ export function AddRecipe() {
   }
 
   const handleSave = async () => {
-    if (!recipe || !user) return
+    if (!recipe || !user || !household) return
 
     setSaving(true)
     setSaveError(null)
 
     const recipeData: RecipeInsert = {
       user_id: user.id,
+      household_id: household.id,
       title: effectiveTitle || recipe.title,
       image_url: recipe.image,
       source_url: url,

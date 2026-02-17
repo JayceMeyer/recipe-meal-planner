@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import type { GroceryList } from '@/types/database'
 
 const ACTIVE_LIST_KEY = 'active-grocery-list-id'
@@ -28,6 +29,7 @@ export function useGroceryLists(): UseGroceryListsResult {
     return null
   })
   const { user } = useAuth()
+  const { household } = useHousehold()
   const isMounted = useRef(true)
 
   const setActiveListId = useCallback((id: string | null) => {
@@ -52,7 +54,6 @@ export function useGroceryLists(): UseGroceryListsResult {
     const { data, error: fetchError } = await supabase
       .from('grocery_lists')
       .select('*')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
     if (!isMounted.current) return
@@ -83,7 +84,6 @@ export function useGroceryLists(): UseGroceryListsResult {
       const { data, error: fetchError } = await supabase
         .from('grocery_lists')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
       if (!isMounted.current) return
@@ -107,11 +107,11 @@ export function useGroceryLists(): UseGroceryListsResult {
 
   const createList = useCallback(
     async (name: string): Promise<GroceryList | null> => {
-      if (!user) return null
+      if (!user || !household) return null
 
       const { data, error: createError } = await supabase
         .from('grocery_lists')
-        .insert({ user_id: user.id, name: name.trim() })
+        .insert({ user_id: user.id, household_id: household.id, name: name.trim() })
         .select()
         .single()
 
@@ -123,7 +123,7 @@ export function useGroceryLists(): UseGroceryListsResult {
       setLists((prev) => [data, ...prev])
       return data
     },
-    [user]
+    [user, household]
   )
 
   const updateList = useCallback(async (id: string, name: string): Promise<boolean> => {

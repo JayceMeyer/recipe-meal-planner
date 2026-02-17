@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import type { Recipe, RecipeInsert, Ingredient, Step } from '@/types/database'
 
 export interface RecipeFormData {
@@ -64,6 +65,7 @@ function recipeToFormData(recipe: Recipe): RecipeFormData {
 
 export function useRecipeForm(existingRecipe?: Recipe): UseRecipeFormResult {
   const { user } = useAuth()
+  const { household } = useHousehold()
   const [formData, setFormData] = useState<RecipeFormData>(
     existingRecipe ? recipeToFormData(existingRecipe) : emptyFormData
   )
@@ -142,7 +144,7 @@ export function useRecipeForm(existingRecipe?: Recipe): UseRecipeFormResult {
   const isValid = formData.title.trim().length > 0
 
   const save = useCallback(async (): Promise<string | null> => {
-    if (!user) {
+    if (!user || !household) {
       setError('You must be logged in to save a recipe')
       return null
     }
@@ -162,6 +164,7 @@ export function useRecipeForm(existingRecipe?: Recipe): UseRecipeFormResult {
 
     const recipeData: RecipeInsert = {
       user_id: user.id,
+      household_id: household.id,
       title: formData.title.trim(),
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
@@ -204,7 +207,7 @@ export function useRecipeForm(existingRecipe?: Recipe): UseRecipeFormResult {
       setSaving(false)
       return data.id
     }
-  }, [user, formData, existingRecipe, isValid])
+  }, [user, household, formData, existingRecipe, isValid])
 
   return {
     formData,

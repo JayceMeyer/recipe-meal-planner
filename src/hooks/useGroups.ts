@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import type { RecipeGroup } from '@/types/database'
 
 interface UseGroupsResult {
@@ -18,6 +19,7 @@ export function useGroups(): UseGroupsResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const { household } = useHousehold()
   const isMounted = useRef(true)
 
   const fetchGroups = useCallback(async () => {
@@ -33,7 +35,6 @@ export function useGroups(): UseGroupsResult {
     const { data, error: fetchError } = await supabase
       .from('recipe_groups')
       .select('*')
-      .eq('user_id', user.id)
       .order('name', { ascending: true })
 
     if (!isMounted.current) return
@@ -64,7 +65,6 @@ export function useGroups(): UseGroupsResult {
       const { data, error: fetchError } = await supabase
         .from('recipe_groups')
         .select('*')
-        .eq('user_id', user.id)
         .order('name', { ascending: true })
 
       if (!isMounted.current) return
@@ -88,11 +88,11 @@ export function useGroups(): UseGroupsResult {
 
   const createGroup = useCallback(
     async (name: string): Promise<RecipeGroup | null> => {
-      if (!user) return null
+      if (!user || !household) return null
 
       const { data, error: createError } = await supabase
         .from('recipe_groups')
-        .insert({ user_id: user.id, name: name.trim() })
+        .insert({ user_id: user.id, household_id: household.id, name: name.trim() })
         .select()
         .single()
 
@@ -104,7 +104,7 @@ export function useGroups(): UseGroupsResult {
       setGroups((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
       return data
     },
-    [user]
+    [user, household]
   )
 
   const updateGroup = useCallback(

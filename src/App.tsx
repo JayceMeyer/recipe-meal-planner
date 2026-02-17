@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { HouseholdProvider } from '@/contexts/HouseholdContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Layout } from '@/components/Layout'
 import { Login } from '@/pages/Login'
@@ -14,14 +15,17 @@ import { GroceryListDetail } from '@/pages/GroceryListDetail'
 import { Profile } from '@/pages/Profile'
 import { Groups } from '@/pages/Groups'
 import { Pantry } from '@/pages/Pantry'
+import { JoinHousehold } from '@/pages/JoinHousehold'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <HouseholdProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/join/:token" element={<JoinHousehold />} />
           <Route
             element={
               <ProtectedRoute>
@@ -42,6 +46,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Routes>
+        </HouseholdProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -20,10 +20,125 @@ export interface Step {
 export interface Database {
   public: {
     Tables: {
+      households: {
+        Row: {
+          id: string
+          name: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'households_created_by_fkey'
+            columns: ['created_by']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      household_members: {
+        Row: {
+          id: string
+          household_id: string
+          user_id: string
+          role: 'owner' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          user_id: string
+          role: 'owner' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          user_id?: string
+          role?: 'owner' | 'member'
+          joined_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'household_members_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'household_members_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      household_invites: {
+        Row: {
+          id: string
+          household_id: string
+          invited_by: string | null
+          email: string
+          token: string
+          status: 'pending' | 'accepted' | 'expired'
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          invited_by?: string | null
+          email: string
+          token?: string
+          status?: 'pending' | 'accepted' | 'expired'
+          created_at?: string
+          expires_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          invited_by?: string | null
+          email?: string
+          token?: string
+          status?: 'pending' | 'accepted' | 'expired'
+          created_at?: string
+          expires_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'household_invites_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'household_invites_invited_by_fkey'
+            columns: ['invited_by']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       recipes: {
         Row: {
           id: string
           user_id: string
+          household_id: string
           title: string
           description: string | null
           image_url: string | null
@@ -41,6 +156,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
+          household_id: string
           title: string
           description?: string | null
           image_url?: string | null
@@ -58,6 +174,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
+          household_id?: string
           title?: string
           description?: string | null
           image_url?: string | null
@@ -78,6 +195,12 @@ export interface Database {
             columns: ['user_id']
             referencedRelation: 'users'
             referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recipes_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
           }
         ]
       }
@@ -85,6 +208,7 @@ export interface Database {
         Row: {
           id: string
           user_id: string
+          household_id: string
           name: string
           created_at: string
           updated_at: string
@@ -92,6 +216,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
+          household_id: string
           name: string
           created_at?: string
           updated_at?: string
@@ -99,6 +224,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
+          household_id?: string
           name?: string
           created_at?: string
           updated_at?: string
@@ -108,6 +234,12 @@ export interface Database {
             foreignKeyName: 'recipe_groups_user_id_fkey'
             columns: ['user_id']
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recipe_groups_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
             referencedColumns: ['id']
           }
         ]
@@ -147,6 +279,7 @@ export interface Database {
         Row: {
           id: string
           user_id: string
+          household_id: string
           name: string
           created_at: string
           updated_at: string
@@ -154,6 +287,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
+          household_id: string
           name: string
           created_at?: string
           updated_at?: string
@@ -161,6 +295,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
+          household_id?: string
           name?: string
           created_at?: string
           updated_at?: string
@@ -170,6 +305,12 @@ export interface Database {
             foreignKeyName: 'grocery_lists_user_id_fkey'
             columns: ['user_id']
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'grocery_lists_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
             referencedColumns: ['id']
           }
         ]
@@ -227,6 +368,7 @@ export interface Database {
         Row: {
           id: string
           user_id: string
+          household_id: string
           ingredient_name: string
           quantity: string | null
           unit: string | null
@@ -237,6 +379,7 @@ export interface Database {
         Insert: {
           id?: string
           user_id: string
+          household_id: string
           ingredient_name: string
           quantity?: string | null
           unit?: string | null
@@ -247,6 +390,7 @@ export interface Database {
         Update: {
           id?: string
           user_id?: string
+          household_id?: string
           ingredient_name?: string
           quantity?: string | null
           unit?: string | null
@@ -259,6 +403,12 @@ export interface Database {
             foreignKeyName: 'pantry_items_user_id_fkey'
             columns: ['user_id']
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'pantry_items_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
             referencedColumns: ['id']
           }
         ]
@@ -310,3 +460,13 @@ export type GroceryItemUpdate = TablesUpdate<'grocery_items'>
 export type PantryItem = Tables<'pantry_items'>
 export type PantryItemInsert = TablesInsert<'pantry_items'>
 export type PantryItemUpdate = TablesUpdate<'pantry_items'>
+
+export type Household = Tables<'households'>
+export type HouseholdInsert = TablesInsert<'households'>
+export type HouseholdUpdate = TablesUpdate<'households'>
+
+export type HouseholdMember = Tables<'household_members'>
+export type HouseholdMemberInsert = TablesInsert<'household_members'>
+
+export type HouseholdInvite = Tables<'household_invites'>
+export type HouseholdInviteInsert = TablesInsert<'household_invites'>

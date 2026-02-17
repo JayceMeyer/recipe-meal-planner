@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { HouseholdSection } from '@/components/HouseholdSection'
 
 export function Profile() {
   const { user, signOut } = useAuth()
@@ -27,6 +28,8 @@ export function Profile() {
           </Button>
         </CardContent>
       </Card>
+
+      <HouseholdSection />
     </div>
   )
 }
