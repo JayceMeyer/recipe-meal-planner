@@ -224,6 +224,47 @@ export interface Database {
         ]
       }
     }
+      pantry_items: {
+        Row: {
+          id: string
+          user_id: string
+          ingredient_name: string
+          quantity: string | null
+          unit: string | null
+          category: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          ingredient_name: string
+          quantity?: string | null
+          unit?: string | null
+          category?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          ingredient_name?: string
+          quantity?: string | null
+          unit?: string | null
+          category?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pantry_items_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+    }
     Views: {
       [_ in never]: never
     }
@@ -266,3 +307,7 @@ export type GroceryListUpdate = TablesUpdate<'grocery_lists'>
 export type GroceryItem = Tables<'grocery_items'>
 export type GroceryItemInsert = TablesInsert<'grocery_items'>
 export type GroceryItemUpdate = TablesUpdate<'grocery_items'>
+
+export type PantryItem = Tables<'pantry_items'>
+export type PantryItemInsert = TablesInsert<'pantry_items'>
+export type PantryItemUpdate = TablesUpdate<'pantry_items'>
