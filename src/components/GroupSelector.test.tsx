@@ -4,9 +4,9 @@ import { GroupSelector } from './GroupSelector'
 import type { RecipeGroup } from '@/types/database'
 
 const mockGroups: RecipeGroup[] = [
-  { id: 'group-1', name: 'Breakfast', user_id: 'user-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: 'group-2', name: 'Dinner', user_id: 'user-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
-  { id: 'group-3', name: 'Dessert', user_id: 'user-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 'group-1', name: 'Breakfast', user_id: 'user-1', household_id: 'household-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 'group-2', name: 'Dinner', user_id: 'user-1', household_id: 'household-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 'group-3', name: 'Dessert', user_id: 'user-1', household_id: 'household-1', created_at: '2024-01-01', updated_at: '2024-01-01' },
 ]
 
 describe('GroupSelector', () => {
@@ -101,6 +101,7 @@ describe('GroupSelector', () => {
       id: 'group-4',
       name: 'Lunch',
       user_id: 'user-1',
+      household_id: 'household-1',
       created_at: '2024-01-01',
       updated_at: '2024-01-01',
     })

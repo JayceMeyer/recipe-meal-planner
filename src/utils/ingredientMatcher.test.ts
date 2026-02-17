@@ -31,6 +31,7 @@ function mockRecipe(id: string, title: string, ingredients: Ingredient[]): Recip
   return {
     id,
     user_id: 'user-1',
+    household_id: 'household-1',
     title,
     description: null,
     image_url: null,

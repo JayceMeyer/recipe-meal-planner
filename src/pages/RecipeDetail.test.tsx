@@ -12,6 +12,7 @@ const mockNavigate = vi.fn()
 const mockRecipe: Recipe = {
   id: 'recipe-123',
   user_id: 'user-123',
+  household_id: 'household-1',
   title: 'Chocolate Chip Cookies',
   description: 'Delicious homemade cookies',
   image_url: 'https://example.com/cookies.jpg',

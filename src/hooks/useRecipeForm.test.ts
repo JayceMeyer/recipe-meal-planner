@@ -28,6 +28,7 @@ vi.mock('@/lib/supabase', () => ({
 const mockRecipe: Recipe = {
   id: 'recipe-123',
   user_id: 'user-123',
+  household_id: 'household-1',
   title: 'Existing Recipe',
   description: 'A test recipe',
   image_url: 'https://example.com/image.jpg',

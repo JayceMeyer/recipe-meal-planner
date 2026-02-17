@@ -12,6 +12,7 @@ const mockRecipes: Recipe[] = [
   {
     id: 'recipe-1',
     user_id: 'user-123',
+    household_id: 'household-1',
     title: 'Chocolate Chip Cookies',
     description: null,
     image_url: 'https://example.com/cookies.jpg',
@@ -29,6 +30,7 @@ const mockRecipes: Recipe[] = [
   {
     id: 'recipe-2',
     user_id: 'user-123',
+    household_id: 'household-1',
     title: 'Banana Bread',
     description: null,
     image_url: null,
