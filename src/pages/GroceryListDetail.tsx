@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react'
 import { useGroceryLists } from '@/hooks/useGroceryLists'
 import { useGroceryItems } from '@/hooks/useGroceryItems'
+import { usePantryItems } from '@/hooks/usePantryItems'
 import { useRecipeSuggestions } from '@/hooks/useRecipeSuggestions'
 import { useAlmostMakeableRecipes } from '@/hooks/useAlmostMakeableRecipes'
 import { GroceryItem } from '@/components/GroceryItem'
@@ -29,14 +30,39 @@ export function GroceryListDetail() {
   const { almostMakeable, addMissingIngredients, loading: almostLoading } =
     useAlmostMakeableRecipes(id)
 
+  const { addItems: addToPantry } = usePantryItems()
+
   const [newItemName, setNewItemName] = useState('')
   const [adding, setAdding] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [showChecked, setShowChecked] = useState(true)
+  const [pantryBanner, setPantryBanner] = useState(false)
+  const addedToPantryRef = useRef(false)
 
   const list = lists.find((l) => l.id === id)
   const loading = listsLoading || itemsLoading
   const suggestionsReady = !suggestionsLoading && !almostLoading
+
+  useEffect(() => {
+    if (loading || items.length === 0 || addedToPantryRef.current) return
+
+    const allChecked = items.every((i) => i.checked)
+    if (allChecked) {
+      addedToPantryRef.current = true
+      addToPantry(
+        items.map((i) => ({
+          ingredient_name: i.ingredient_name,
+          quantity: i.quantity || undefined,
+          unit: i.unit || undefined,
+        }))
+      ).then((success) => {
+        if (success) {
+          setPantryBanner(true)
+          setTimeout(() => setPantryBanner(false), 4000)
+        }
+      })
+    }
+  }, [items, loading, addToPantry])
 
   // Filter for fully-makeable recipes (100% match)
   const canMakeRecipes = useMemo(() => {
@@ -163,6 +189,13 @@ export function GroceryListDetail() {
       </div>
 
       <div className="container mt-4">
+        {pantryBanner && (
+          <div className="flex items-center gap-2 p-3 mb-4 text-sm bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200 rounded-md">
+            <Check className="size-4" />
+            All items added to your pantry!
+          </div>
+        )}
+
         {items.length > 0 && (
           <RecipeSuggestions
             canMake={canMakeRecipes}
