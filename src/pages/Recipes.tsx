@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 export function Recipes() {
   const [search, setSearch] = useState('')
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
-  const { recipes, loading, error, refresh } = useRecipes()
+  const { recipes, loading, error } = useRecipes()
   const { groups } = useGroups()
   const { recipeGroupMap } = useAllRecipeGroups()
 
@@ -41,10 +41,6 @@ export function Recipes() {
   const getRecipeGroups = (recipeId: string) => {
     const groupIds = recipeGroupMap.get(recipeId) ?? []
     return groups.filter((g) => groupIds.includes(g.id))
-  }
-
-  const handleRefresh = async () => {
-    await refresh()
   }
 
   if (loading) {
@@ -167,7 +163,6 @@ export function Recipes() {
       ) : (
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          onTouchEnd={handleRefresh}
         >
           {filteredRecipes.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} groups={getRecipeGroups(recipe.id)} />
