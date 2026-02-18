@@ -450,6 +450,55 @@ export interface Database {
           }
         ]
       }
+      user_preferences: {
+        Row: {
+          id: string
+          household_id: string
+          user_id: string
+          cuisine_preferences: string[]
+          dietary_restrictions: string[]
+          setup_completed: boolean
+          setup_completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          user_id: string
+          cuisine_preferences?: string[]
+          dietary_restrictions?: string[]
+          setup_completed?: boolean
+          setup_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          user_id?: string
+          cuisine_preferences?: string[]
+          dietary_restrictions?: string[]
+          setup_completed?: boolean
+          setup_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_preferences_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'user_preferences_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       pantry_items: {
         Row: {
           id: string
@@ -566,3 +615,7 @@ export type MealPlanEntryInsert = TablesInsert<'meal_plan_entries'>
 export type MealPlanEntryUpdate = TablesUpdate<'meal_plan_entries'>
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export type UserPreferences = Tables<'user_preferences'>
+export type UserPreferencesInsert = TablesInsert<'user_preferences'>
+export type UserPreferencesUpdate = TablesUpdate<'user_preferences'>
