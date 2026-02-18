@@ -15,6 +15,7 @@ export interface RecipeFormData {
   ingredients: Ingredient[]
   steps: Step[]
   notes: string
+  cuisine: string[]
 }
 
 interface UseRecipeFormResult {
@@ -46,6 +47,7 @@ const emptyFormData: RecipeFormData = {
   ingredients: [{ name: '', amount: '', unit: '' }],
   steps: [{ order: 1, instruction: '' }],
   notes: '',
+  cuisine: [],
 }
 
 function recipeToFormData(recipe: Recipe): RecipeFormData {
@@ -60,6 +62,7 @@ function recipeToFormData(recipe: Recipe): RecipeFormData {
     ingredients: recipe.ingredients.length > 0 ? recipe.ingredients : [{ name: '', amount: '', unit: '' }],
     steps: recipe.steps.length > 0 ? recipe.steps : [{ order: 1, instruction: '' }],
     notes: recipe.notes ?? '',
+    cuisine: recipe.cuisine ?? [],
   }
 }
 
@@ -175,6 +178,7 @@ export function useRecipeForm(existingRecipe?: Recipe): UseRecipeFormResult {
       ingredients: filteredIngredients,
       steps: filteredSteps,
       notes: formData.notes.trim() || null,
+      cuisine: formData.cuisine,
     }
 
     if (existingRecipe) {

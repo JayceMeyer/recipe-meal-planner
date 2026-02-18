@@ -150,6 +150,7 @@ export interface Database {
           steps: Step[]
           notes: string | null
           rating: number | null
+          cuisine: string[]
           created_at: string
           updated_at: string
         }
@@ -168,6 +169,7 @@ export interface Database {
           steps?: Step[]
           notes?: string | null
           rating?: number | null
+          cuisine?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -186,6 +188,7 @@ export interface Database {
           steps?: Step[]
           notes?: string | null
           rating?: number | null
+          cuisine?: string[]
           created_at?: string
           updated_at?: string
         }

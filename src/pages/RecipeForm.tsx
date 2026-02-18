@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, X } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
 import { useRecipeForm } from '@/hooks/useRecipeForm'
 import { useGroups, useRecipeGroups } from '@/hooks/useGroups'
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { IngredientList } from '@/components/IngredientList'
 import { StepList } from '@/components/StepList'
+import { CUISINES } from '@/utils/spoonacularMapper'
+import { cn } from '@/lib/utils'
 
 export function RecipeForm() {
   const { id } = useParams<{ id: string }>()
@@ -210,6 +212,38 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
                 onChange={(e) => updateField('source_url', e.target.value)}
                 placeholder="https://example.com/recipe"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cuisine</label>
+              <div className="flex flex-wrap gap-2">
+                {CUISINES.map((cuisine) => {
+                  const selected = formData.cuisine.includes(cuisine)
+                  return (
+                    <button
+                      key={cuisine}
+                      type="button"
+                      onClick={() => {
+                        updateField(
+                          'cuisine',
+                          selected
+                            ? formData.cuisine.filter((c) => c !== cuisine)
+                            : [...formData.cuisine, cuisine],
+                        )
+                      }}
+                      className={cn(
+                        'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                        selected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                      )}
+                    >
+                      {cuisine}
+                      {selected && <X className="size-3" />}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="space-y-2">

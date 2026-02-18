@@ -15,6 +15,7 @@ import { GroceryListDetail } from '@/pages/GroceryListDetail'
 import { Profile } from '@/pages/Profile'
 import { Groups } from '@/pages/Groups'
 import { Pantry } from '@/pages/Pantry'
+import { Discover } from '@/pages/Discover'
 import { JoinHousehold } from '@/pages/JoinHousehold'
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
             <Route path="/grocery" element={<Grocery />} />
             <Route path="/grocery/:id" element={<GroceryListDetail />} />
             <Route path="/pantry" element={<Pantry />} />
+            <Route path="/discover" element={<Discover />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />
           </Route>

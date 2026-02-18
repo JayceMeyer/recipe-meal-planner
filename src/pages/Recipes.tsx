@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Loader2, UtensilsCrossed, Filter, X } from 'lucide-react'
+import { Plus, Search, Loader2, UtensilsCrossed, Filter, X, Sparkles } from 'lucide-react'
 import { useRecipes } from '@/hooks/useRecipes'
 import { useGroups, useAllRecipeGroups } from '@/hooks/useGroups'
 import { RecipeCard } from '@/components/RecipeCard'
@@ -69,12 +69,20 @@ export function Recipes() {
     <div className="container py-6">
       <div className="flex items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">My Recipes</h1>
-        <Button asChild>
-          <Link to="/recipes/add">
-            <Plus className="size-4" />
-            Add Recipe
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/discover">
+              <Sparkles className="size-4" />
+              Discover
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/recipes/add">
+              <Plus className="size-4" />
+              Add Recipe
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {recipes.length > 0 && (
