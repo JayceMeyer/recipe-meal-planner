@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Loader2,
   Clock,
@@ -6,6 +6,7 @@ import {
   BookmarkPlus,
   Check,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react'
 import { useRecipeDiscovery } from '@/hooks/useRecipeDiscovery'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -21,36 +22,39 @@ import type { DiscoverResult } from '@/types/spoonacular'
 export function RecipeSuggestionsStep() {
   const { user } = useAuth()
   const { household } = useHousehold()
-  const { preferences } = useUserPreferences()
-  const { items: pantryItems } = usePantryItems()
+  const { preferences, loading: prefsLoading } = useUserPreferences()
+  const { items: pantryItems, loading: pantryLoading } = usePantryItems()
   const { results, loading, error, search, getDetail } = useRecipeDiscovery()
 
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set())
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set())
-  const [searched, setSearched] = useState(false)
+  const hasSearched = useRef(false)
 
-  useEffect(() => {
-    if (searched) return
-
-    const cuisine = preferences?.cuisine_preferences?.[0] || ''
+  const doSearch = useCallback(() => {
+    const cuisinePrefs = preferences?.cuisine_preferences ?? []
+    const cuisine = cuisinePrefs[0] || ''
     const ingredients = pantryItems.slice(0, 5).map((i) => i.ingredient_name).join(',')
 
     if (ingredients) {
-      setSearched(true)
-      search({
-        query: '',
-        cuisine,
-        ingredients,
-        number: 9,
-      })
+      search({ query: '', cuisine, ingredients, number: 9 })
     } else if (cuisine) {
-      setSearched(true)
-      search({ query: '', cuisine, number: 9 })
+      search({ query: cuisine, number: 9 })
     } else {
-      setSearched(true)
-      search({ query: 'popular easy', number: 9 })
+      search({ query: 'easy dinner', number: 9 })
     }
-  }, [preferences, pantryItems, search, searched])
+  }, [preferences, pantryItems, search])
+
+  useEffect(() => {
+    if (hasSearched.current) return
+    if (prefsLoading || pantryLoading) return
+
+    hasSearched.current = true
+    doSearch()
+  }, [prefsLoading, pantryLoading, doSearch])
+
+  const handleRetry = () => {
+    doSearch()
+  }
 
   const handleSave = async (result: DiscoverResult) => {
     if (!user || !household || savingIds.has(result.id)) return
@@ -73,6 +77,8 @@ export function RecipeSuggestionsStep() {
     }
   }
 
+  const dataLoading = prefsLoading || pantryLoading
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -88,19 +94,28 @@ export function RecipeSuggestionsStep() {
         )}
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-12">
+      {(loading || dataLoading) && (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            {dataLoading ? 'Loading your preferences...' : 'Finding recipes...'}
+          </p>
         </div>
       )}
 
       {error && (
-        <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
-          {error}
+        <div className="text-center space-y-3">
+          <div className="p-4 text-sm text-destructive bg-destructive/10 rounded-md">
+            {error}
+          </div>
+          <Button variant="outline" size="sm" onClick={handleRetry}>
+            <RefreshCw className="size-4 mr-1" />
+            Try again
+          </Button>
         </div>
       )}
 
-      {!loading && results.length > 0 && (
+      {!loading && !dataLoading && results.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {results.map((result) => (
             <Card key={result.id} className="overflow-hidden">
@@ -154,9 +169,15 @@ export function RecipeSuggestionsStep() {
         </div>
       )}
 
-      {!loading && results.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No suggestions available right now. You can discover recipes later!</p>
+      {!loading && !dataLoading && !error && results.length === 0 && hasSearched.current && (
+        <div className="text-center py-8 space-y-3">
+          <p className="text-muted-foreground">
+            No suggestions found. Try different preferences or discover recipes later!
+          </p>
+          <Button variant="outline" size="sm" onClick={handleRetry}>
+            <RefreshCw className="size-4 mr-1" />
+            Try again
+          </Button>
         </div>
       )}
     </div>

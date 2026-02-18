@@ -9,20 +9,34 @@ interface PantrySetupStepProps {
   onSkip: () => void
 }
 
+const COMMON_ITEMS = [
+  'Olive Oil', 'Salt', 'Pepper', 'Garlic', 'Onion', 'Butter',
+  'Eggs', 'Milk', 'Rice', 'Pasta', 'Flour', 'Sugar',
+  'Chicken', 'Tomatoes', 'Cheese', 'Bread',
+]
+
 export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
-  const { items, addItem, deleteItem } = usePantryItems()
+  const { items, loading, error, addItem, deleteItem } = usePantryItems()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
 
-  const handleAdd = async () => {
-    const name = inputValue.trim()
-    if (!name) return
+  const handleAdd = async (name?: string) => {
+    const itemName = (name || inputValue).trim()
+    if (!itemName) return
 
     setAdding(true)
-    await addItem(name)
+    setAddError(null)
+    const result = await addItem(itemName)
+    if (!result) {
+      setAddError('Failed to add item. Please try again.')
+    }
     setAdding(false)
-    setInputValue('')
+    if (!name) setInputValue('')
   }
+
+  const existingNames = new Set(items.map((i) => i.ingredient_name.toLowerCase()))
+  const suggestedItems = COMMON_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
 
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const cat = item.category || categorizeIngredient(item.ingredient_name)
@@ -53,16 +67,47 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
             }
           }}
           disabled={adding}
+          autoFocus
         />
-        <Button onClick={handleAdd} disabled={adding || !inputValue.trim()}>
+        <Button onClick={() => handleAdd()} disabled={adding || !inputValue.trim()}>
           {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
         </Button>
       </div>
 
+      {(addError || error) && (
+        <p className="text-sm text-destructive">{addError || error}</p>
+      )}
+
+      {suggestedItems.length > 0 && items.length < 5 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Quick add common items:</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedItems.slice(0, 8).map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => handleAdd(name)}
+                disabled={adding}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              >
+                <Plus className="size-3" />
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {loading && items.length === 0 && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
       {items.length > 0 && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {items.length} {items.length === 1 ? 'item' : 'items'} added
+        <div className="space-y-4 rounded-lg border p-4">
+          <p className="text-sm font-medium">
+            Your pantry ({items.length} {items.length === 1 ? 'item' : 'items'})
           </p>
           {Object.entries(grouped).map(([category, categoryItems]) => (
             <div key={category}>
@@ -73,12 +118,12 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
                 {categoryItems.map((item) => (
                   <span
                     key={item.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm"
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-3 py-1 text-sm"
                   >
                     {item.ingredient_name}
                     <button
                       onClick={() => deleteItem(item.id)}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-primary/60 hover:text-primary"
                     >
                       <X className="size-3" />
                     </button>
@@ -90,7 +135,7 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
         </div>
       )}
 
-      {items.length === 0 && (
+      {items.length === 0 && !loading && (
         <button
           onClick={onSkip}
           className="block mx-auto text-sm text-muted-foreground hover:text-foreground"

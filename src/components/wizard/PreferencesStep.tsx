@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
-import { UtensilsCrossed } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { UtensilsCrossed, Plus, X } from 'lucide-react'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 const CUISINE_OPTIONS = [
   'Italian', 'Mexican', 'Asian', 'Indian', 'Mediterranean',
   'American', 'Thai', 'Japanese', 'French', 'Greek',
+  'Chinese', 'Korean', 'Vietnamese', 'Spanish', 'Middle Eastern',
+  'Caribbean', 'African', 'Brazilian', 'British', 'German',
 ]
 
 const DIETARY_OPTIONS = [
@@ -21,6 +24,9 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
   const { preferences, updatePreferences } = useUserPreferences()
   const [cuisines, setCuisines] = useState<string[]>([])
   const [dietary, setDietary] = useState<string[]>([])
+  const [cuisineInput, setCuisineInput] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const suggestionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (preferences) {
@@ -29,10 +35,39 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
     }
   }, [preferences])
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const toggleCuisine = (cuisine: string) => {
     const next = cuisines.includes(cuisine)
       ? cuisines.filter((c) => c !== cuisine)
       : [...cuisines, cuisine]
+    setCuisines(next)
+    updatePreferences(next, dietary)
+  }
+
+  const addCustomCuisine = (name?: string) => {
+    const value = (name || cuisineInput).trim()
+    if (!value) return
+    if (cuisines.some((c) => c.toLowerCase() === value.toLowerCase())) return
+
+    const formatted = value.charAt(0).toUpperCase() + value.slice(1)
+    const next = [...cuisines, formatted]
+    setCuisines(next)
+    updatePreferences(next, dietary)
+    setCuisineInput('')
+    setShowSuggestions(false)
+  }
+
+  const removeCuisine = (cuisine: string) => {
+    const next = cuisines.filter((c) => c !== cuisine)
     setCuisines(next)
     updatePreferences(next, dietary)
   }
@@ -45,6 +80,12 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
     updatePreferences(cuisines, next)
   }
 
+  const filteredSuggestions = CUISINE_OPTIONS.filter(
+    (c) =>
+      !cuisines.some((s) => s.toLowerCase() === c.toLowerCase()) &&
+      c.toLowerCase().includes(cuisineInput.toLowerCase()),
+  )
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -55,25 +96,76 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div>
           <p className="text-sm font-medium mb-3">Favorite cuisines</p>
-          <div className="flex flex-wrap gap-2">
-            {CUISINE_OPTIONS.map((cuisine) => (
-              <button
-                key={cuisine}
-                type="button"
-                onClick={() => toggleCuisine(cuisine)}
-                className={cn(
-                  'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-                  cuisines.includes(cuisine)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                )}
-              >
-                {cuisine}
-              </button>
-            ))}
+
+          {cuisines.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {cuisines.map((cuisine) => (
+                <span
+                  key={cuisine}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium"
+                >
+                  {cuisine}
+                  <button onClick={() => removeCuisine(cuisine)} className="hover:opacity-70">
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="relative" ref={suggestionsRef}>
+            <Input
+              placeholder="Type a cuisine (e.g. Korean, Ethiopian...)"
+              value={cuisineInput}
+              onChange={(e) => {
+                setCuisineInput(e.target.value)
+                setShowSuggestions(true)
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (filteredSuggestions.length > 0 && cuisineInput) {
+                    addCustomCuisine(filteredSuggestions[0])
+                  } else {
+                    addCustomCuisine()
+                  }
+                }
+              }}
+            />
+            {showSuggestions && cuisineInput && filteredSuggestions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md max-h-48 overflow-y-auto">
+                {filteredSuggestions.map((cuisine) => (
+                  <button
+                    key={cuisine}
+                    type="button"
+                    onClick={() => addCustomCuisine(cuisine)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    {cuisine}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-3">
+            {CUISINE_OPTIONS.slice(0, 10)
+              .filter((c) => !cuisines.some((s) => s.toLowerCase() === c.toLowerCase()))
+              .map((cuisine) => (
+                <button
+                  key={cuisine}
+                  type="button"
+                  onClick={() => toggleCuisine(cuisine)}
+                  className="px-3 py-1.5 rounded-full text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  <Plus className="inline size-3 mr-1" />
+                  {cuisine}
+                </button>
+              ))}
           </div>
         </div>
 
