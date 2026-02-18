@@ -311,9 +311,9 @@ export function MealPlan() {
                     <button
                       type="button"
                       onClick={() => handleSlotClick(date, mealType)}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors mt-1"
+                      className="flex items-center justify-center gap-1.5 w-full rounded-md border border-dashed border-muted-foreground/30 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors mt-1"
                     >
-                      <Plus className="size-3" />
+                      <Plus className="size-3.5" />
                       Add
                     </button>
                   </div>
