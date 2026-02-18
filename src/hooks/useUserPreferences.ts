@@ -19,13 +19,18 @@ export function useUserPreferences(): UseUserPreferencesResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
-  const { household } = useHousehold()
+  const { household, loading: householdLoading } = useHousehold()
   const isMounted = useRef(true)
 
   const fetchOrCreate = useCallback(async () => {
-    if (!user || !household) {
+    if (!user) {
       setPreferences(null)
       setLoading(false)
+      return
+    }
+
+    if (!household) {
+      if (!householdLoading) setLoading(false)
       return
     }
 
@@ -71,7 +76,7 @@ export function useUserPreferences(): UseUserPreferencesResult {
     }
 
     setLoading(false)
-  }, [user, household])
+  }, [user, household, householdLoading])
 
   useEffect(() => {
     isMounted.current = true

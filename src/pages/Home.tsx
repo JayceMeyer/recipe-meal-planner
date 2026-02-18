@@ -24,7 +24,7 @@ export function Home() {
     )
   }
 
-  if (preferences && !preferences.setup_completed && !wizardJustCompleted) {
+  if (!wizardJustCompleted && (!preferences || !preferences.setup_completed)) {
     return (
       <div className="py-8">
         <SetupWizard onComplete={handleWizardComplete} />
