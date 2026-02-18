@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { TodaysMeals } from '@/components/TodaysMeals'
 
 export function Home() {
   const { user } = useAuth()
@@ -12,6 +13,8 @@ export function Home() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <TodaysMeals />
+
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -20,18 +23,6 @@ export function Home() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Add recipes, plan meals, and generate grocery lists.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Recipes</CardTitle>
-            <CardDescription>Your recently viewed recipes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No recent recipes yet. Start by adding some!
             </p>
           </CardContent>
         </Card>

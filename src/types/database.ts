@@ -367,6 +367,89 @@ export interface Database {
           }
         ]
       }
+      meal_plans: {
+        Row: {
+          id: string
+          household_id: string
+          user_id: string
+          week_start: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          user_id: string
+          week_start: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          user_id?: string
+          week_start?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'meal_plans_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'meal_plans_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      meal_plan_entries: {
+        Row: {
+          id: string
+          plan_id: string
+          recipe_id: string | null
+          date: string
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          plan_id: string
+          recipe_id?: string | null
+          date: string
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          plan_id?: string
+          recipe_id?: string | null
+          date?: string
+          meal_type?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'meal_plan_entries_plan_id_fkey'
+            columns: ['plan_id']
+            referencedRelation: 'meal_plans'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'meal_plan_entries_recipe_id_fkey'
+            columns: ['recipe_id']
+            referencedRelation: 'recipes'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       pantry_items: {
         Row: {
           id: string
@@ -473,3 +556,13 @@ export type HouseholdMemberInsert = TablesInsert<'household_members'>
 
 export type HouseholdInvite = Tables<'household_invites'>
 export type HouseholdInviteInsert = TablesInsert<'household_invites'>
+
+export type MealPlan = Tables<'meal_plans'>
+export type MealPlanInsert = TablesInsert<'meal_plans'>
+export type MealPlanUpdate = TablesUpdate<'meal_plans'>
+
+export type MealPlanEntry = Tables<'meal_plan_entries'>
+export type MealPlanEntryInsert = TablesInsert<'meal_plan_entries'>
+export type MealPlanEntryUpdate = TablesUpdate<'meal_plan_entries'>
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'

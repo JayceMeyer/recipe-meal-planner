@@ -16,6 +16,7 @@ import { ServingAdjuster } from '@/components/ServingAdjuster'
 import { RecipeNotes } from '@/components/RecipeNotes'
 import { AddToGroceryList } from '@/components/AddToGroceryList'
 import { GroupBadge } from '@/components/GroupBadge'
+import { AddToMealPlan } from '@/components/AddToMealPlan'
 import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
 import {
@@ -120,6 +121,7 @@ export function RecipeDetail() {
             <div className="flex items-start justify-between gap-4 mb-4">
               <h1 className="text-2xl font-bold">{recipe.title}</h1>
               <div className="flex gap-2">
+                <AddToMealPlan recipeId={recipe.id} />
                 <Button variant="outline" size="icon" asChild>
                   <Link to={`/recipes/${recipe.id}/edit`}>
                     <Edit className="size-4" />

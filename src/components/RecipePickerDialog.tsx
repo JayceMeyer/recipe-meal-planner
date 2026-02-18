@@ -1,0 +1,90 @@
+import { useState, useMemo } from 'react'
+import { Search, UtensilsCrossed, Loader2 } from 'lucide-react'
+import { useRecipes } from '@/hooks/useRecipes'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import type { Recipe } from '@/types/database'
+
+interface RecipePickerDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSelect: (recipe: Recipe) => void
+}
+
+export function RecipePickerDialog({ open, onOpenChange, onSelect }: RecipePickerDialogProps) {
+  const [search, setSearch] = useState('')
+  const { recipes, loading } = useRecipes()
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return recipes
+    const query = search.toLowerCase()
+    return recipes.filter((r) => r.title.toLowerCase().includes(query))
+  }, [recipes, search])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Choose a Recipe</DialogTitle>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search recipes..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="overflow-y-auto flex-1 -mx-6 px-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <UtensilsCrossed className="size-10 text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">No recipes found</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filtered.map((recipe) => (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(recipe)
+                    onOpenChange(false)
+                    setSearch('')
+                  }}
+                  className="flex items-center gap-3 w-full rounded-lg p-2 text-left hover:bg-accent transition-colors"
+                >
+                  <div className="size-10 rounded bg-muted shrink-0 overflow-hidden">
+                    {recipe.image_url ? (
+                      <img
+                        src={recipe.image_url}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="size-full flex items-center justify-center">
+                        <UtensilsCrossed className="size-4 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium line-clamp-1">{recipe.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
