@@ -1,44 +1,49 @@
+import { useState, useCallback } from 'react'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { SetupWizard } from '@/components/wizard/SetupWizard'
+import { PantryQuickTool } from '@/components/dashboard/PantryQuickTool'
+import { QuickAccessCards } from '@/components/dashboard/QuickAccessCards'
 import { TodaysMeals } from '@/components/TodaysMeals'
 
 export function Home() {
   const { user } = useAuth()
+  const { preferences, loading } = useUserPreferences()
+  const [wizardJustCompleted, setWizardJustCompleted] = useState(false)
+
+  const handleWizardComplete = useCallback(() => {
+    setWizardJustCompleted(true)
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (preferences && !preferences.setup_completed && !wizardJustCompleted) {
+    return (
+      <div className="py-8">
+        <SetupWizard onComplete={handleWizardComplete} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!</h1>
+        <h1 className="text-2xl font-bold">
+          Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
+        </h1>
         <p className="text-muted-foreground">What would you like to cook today?</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <TodaysMeals />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Get started with your meal planning</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Add recipes, plan meals, and generate grocery lists.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Grocery List</CardTitle>
-            <CardDescription>Items you need to buy</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Your grocery list is empty.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <QuickAccessCards />
+      <PantryQuickTool />
+      <TodaysMeals />
     </div>
   )
 }
