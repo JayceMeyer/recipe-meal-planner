@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { SetupWizard } from '@/components/wizard/SetupWizard'
 import { PantryQuickTool } from '@/components/dashboard/PantryQuickTool'
@@ -9,19 +10,24 @@ import { TodaysMeals } from '@/components/TodaysMeals'
 
 export function Home() {
   const { user } = useAuth()
-  const { preferences, loading } = useUserPreferences()
+  const { household, loading: householdLoading } = useHousehold()
+  const { preferences, loading: prefsLoading } = useUserPreferences()
   const [wizardJustCompleted, setWizardJustCompleted] = useState(false)
 
   const handleWizardComplete = useCallback(() => {
     setWizardJustCompleted(true)
   }, [])
 
-  if (loading) {
+  if (householdLoading || prefsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
+  }
+
+  if (!household) {
+    return null
   }
 
   if (!wizardJustCompleted && (!preferences || !preferences.setup_completed)) {

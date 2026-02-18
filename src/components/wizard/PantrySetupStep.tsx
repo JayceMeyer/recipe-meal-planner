@@ -19,18 +19,12 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   const { items, loading, error, addItem, deleteItem } = usePantryItems()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
-
   const handleAdd = async (name?: string) => {
     const itemName = (name || inputValue).trim()
     if (!itemName) return
 
     setAdding(true)
-    setAddError(null)
-    const result = await addItem(itemName)
-    if (!result) {
-      setAddError('Failed to add item. Please try again.')
-    }
+    await addItem(itemName)
     setAdding(false)
     if (!name) setInputValue('')
   }
@@ -74,8 +68,8 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
         </Button>
       </div>
 
-      {(addError || error) && (
-        <p className="text-sm text-destructive">{addError || error}</p>
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {suggestedItems.length > 0 && items.length < 5 && (
