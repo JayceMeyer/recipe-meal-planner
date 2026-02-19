@@ -97,22 +97,34 @@ export function MealPlan() {
     []
   )
 
+  const ensurePlan = useCallback(async () => {
+    if (plan) return plan
+    const created = await createWeekPlan(weekStart)
+    return created ? { ...created, entries: [] } : null
+  }, [plan, weekStart, createWeekPlan])
+
   const handleRecipeSelect = useCallback(
     async (recipe: Recipe) => {
       if (!pickerTarget) return
-
-      let currentPlan = plan
-      if (!currentPlan) {
-        currentPlan = await createWeekPlan(weekStart).then((p) =>
-          p ? { ...p, entries: [] } : null
-        )
-      }
+      const currentPlan = await ensurePlan()
       if (!currentPlan) return
 
-      await addEntry(currentPlan.id, recipe.id, pickerTarget.date, pickerTarget.mealType)
+      await addEntry(currentPlan.id, pickerTarget.date, pickerTarget.mealType, { recipeId: recipe.id })
       setPickerTarget(null)
     },
-    [pickerTarget, plan, weekStart, createWeekPlan, addEntry]
+    [pickerTarget, ensurePlan, addEntry]
+  )
+
+  const handleCustomMeal = useCallback(
+    async (text: string) => {
+      if (!pickerTarget) return
+      const currentPlan = await ensurePlan()
+      if (!currentPlan) return
+
+      await addEntry(currentPlan.id, pickerTarget.date, pickerTarget.mealType, { notes: text })
+      setPickerTarget(null)
+    },
+    [pickerTarget, ensurePlan, addEntry]
   )
 
   const getEntries = useCallback(
@@ -339,6 +351,7 @@ export function MealPlan() {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         onSelect={handleRecipeSelect}
+        onCustomMeal={handleCustomMeal}
       />
     </div>
   )

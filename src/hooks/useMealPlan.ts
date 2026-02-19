@@ -15,9 +15,9 @@ interface UseMealPlanResult {
   createWeekPlan: (weekStart: string) => Promise<MealPlan | null>
   addEntry: (
     planId: string,
-    recipeId: string,
     date: string,
-    mealType: MealType
+    mealType: MealType,
+    options?: { recipeId?: string; notes?: string }
   ) => Promise<MealPlanEntry | null>
   removeEntry: (entryId: string) => Promise<boolean>
   moveEntry: (entryId: string, newDate: string, newMealType: MealType) => Promise<boolean>
@@ -178,13 +178,19 @@ export function useMealPlan(weekStart?: string): UseMealPlanResult {
   const addEntry = useCallback(
     async (
       planId: string,
-      recipeId: string,
       date: string,
-      mealType: MealType
+      mealType: MealType,
+      options?: { recipeId?: string; notes?: string }
     ): Promise<MealPlanEntry | null> => {
       const { data, error: insertError } = await supabase
         .from('meal_plan_entries')
-        .insert({ plan_id: planId, recipe_id: recipeId, date, meal_type: mealType })
+        .insert({
+          plan_id: planId,
+          recipe_id: options?.recipeId ?? null,
+          date,
+          meal_type: mealType,
+          notes: options?.notes ?? null,
+        })
         .select()
         .single()
 

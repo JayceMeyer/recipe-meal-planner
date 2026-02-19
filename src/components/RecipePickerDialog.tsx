@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Search, UtensilsCrossed, Loader2 } from 'lucide-react'
+import { Search, UtensilsCrossed, Loader2, PenLine } from 'lucide-react'
 import { useRecipes } from '@/hooks/useRecipes'
 import {
   Dialog,
@@ -8,16 +8,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import type { Recipe } from '@/types/database'
 
 interface RecipePickerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelect: (recipe: Recipe) => void
+  onCustomMeal?: (text: string) => void
 }
 
-export function RecipePickerDialog({ open, onOpenChange, onSelect }: RecipePickerDialogProps) {
+export function RecipePickerDialog({ open, onOpenChange, onSelect, onCustomMeal }: RecipePickerDialogProps) {
   const [search, setSearch] = useState('')
+  const [customText, setCustomText] = useState('')
   const { recipes, loading } = useRecipes()
 
   const filtered = useMemo(() => {
@@ -26,11 +29,19 @@ export function RecipePickerDialog({ open, onOpenChange, onSelect }: RecipePicke
     return recipes.filter((r) => r.title.toLowerCase().includes(query))
   }, [recipes, search])
 
+  const handleCustomSubmit = () => {
+    if (!customText.trim() || !onCustomMeal) return
+    onCustomMeal(customText.trim())
+    onOpenChange(false)
+    setCustomText('')
+    setSearch('')
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Choose a Recipe</DialogTitle>
+          <DialogTitle>Add a Meal</DialogTitle>
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -82,6 +93,36 @@ export function RecipePickerDialog({ open, onOpenChange, onSelect }: RecipePicke
                 </button>
               ))}
             </div>
+          )}
+
+          {onCustomMeal && (
+            <>
+              <div className="flex items-center gap-3 my-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">Or just type what you're making</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <PenLine className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    placeholder="e.g. Leftover pizza"
+                    value={customText}
+                    onChange={(e) => setCustomText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleCustomSubmit()
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={handleCustomSubmit} disabled={!customText.trim()}>
+                  Add
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>
