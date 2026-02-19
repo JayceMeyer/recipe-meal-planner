@@ -5,6 +5,7 @@ export interface SpoonacularSearchResult {
   imageType: string
   readyInMinutes?: number
   servings?: number
+  extendedIngredients?: SpoonacularExtendedIngredient[]
 }
 
 export interface SpoonacularSearchResponse {
@@ -79,6 +80,7 @@ export interface DiscoverSearchParams {
   diet?: string
   ingredients?: string
   includeIngredients?: string
+  pantryIngredients?: string[]
   offset?: number
   number?: number
 }

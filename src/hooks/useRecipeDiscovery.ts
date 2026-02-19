@@ -21,6 +21,24 @@ interface UseRecipeDiscoveryResult {
   reset: () => void
 }
 
+function computeIngredientMatches(
+  recipeIngredients: { name: string }[],
+  pantryNames: string[],
+): { used: number; missed: number } {
+  const pantryLower = pantryNames.map((n) => n.toLowerCase())
+  let used = 0
+  let missed = 0
+  for (const ing of recipeIngredients) {
+    const name = ing.name.toLowerCase()
+    if (pantryLower.some((p) => name.includes(p) || p.includes(name))) {
+      used++
+    } else {
+      missed++
+    }
+  }
+  return { used, missed }
+}
+
 export function useRecipeDiscovery(): UseRecipeDiscoveryResult {
   const { household } = useHousehold()
   const [results, setResults] = useState<DiscoverResult[]>([])
@@ -50,21 +68,34 @@ export function useRecipeDiscovery(): UseRecipeDiscoveryResult {
       setLastParams(params)
       setOffset(0)
 
+      const { pantryIngredients, ...apiParams } = params
+
       try {
         const data = (await invokeFunction({
           action: 'search',
-          ...params,
+          ...apiParams,
           offset: 0,
           number: params.number ?? 12,
         })) as SpoonacularSearchResponse
 
-        const mapped: DiscoverResult[] = (data.results || []).map((r) => ({
-          id: r.id,
-          title: r.title,
-          image: r.image,
-          readyInMinutes: r.readyInMinutes,
-          servings: r.servings,
-        }))
+        const mapped: DiscoverResult[] = (data.results || []).map((r) => {
+          const base: DiscoverResult = {
+            id: r.id,
+            title: r.title,
+            image: r.image,
+            readyInMinutes: r.readyInMinutes,
+            servings: r.servings,
+          }
+          if (pantryIngredients?.length && r.extendedIngredients?.length) {
+            const { used, missed } = computeIngredientMatches(
+              r.extendedIngredients,
+              pantryIngredients,
+            )
+            base.usedIngredientCount = used
+            base.missedIngredientCount = missed
+          }
+          return base
+        })
 
         setResults(mapped)
         setTotalResults(data.totalResults ?? 0)
@@ -121,21 +152,34 @@ export function useRecipeDiscovery(): UseRecipeDiscoveryResult {
     setLoading(true)
     setError(null)
 
+    const { pantryIngredients, ...apiParams } = lastParams
+
     try {
       const data = (await invokeFunction({
         action: 'search',
-        ...lastParams,
+        ...apiParams,
         offset,
         number: lastParams.number ?? 12,
       })) as SpoonacularSearchResponse
 
-      const mapped: DiscoverResult[] = (data.results || []).map((r) => ({
-        id: r.id,
-        title: r.title,
-        image: r.image,
-        readyInMinutes: r.readyInMinutes,
-        servings: r.servings,
-      }))
+      const mapped: DiscoverResult[] = (data.results || []).map((r) => {
+        const base: DiscoverResult = {
+          id: r.id,
+          title: r.title,
+          image: r.image,
+          readyInMinutes: r.readyInMinutes,
+          servings: r.servings,
+        }
+        if (pantryIngredients?.length && r.extendedIngredients?.length) {
+          const { used, missed } = computeIngredientMatches(
+            r.extendedIngredients,
+            pantryIngredients,
+          )
+          base.usedIngredientCount = used
+          base.missedIngredientCount = missed
+        }
+        return base
+      })
 
       setResults((prev) => [...prev, ...mapped])
       setOffset((prev) => prev + (data.number ?? mapped.length))

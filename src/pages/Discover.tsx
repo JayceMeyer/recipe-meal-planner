@@ -85,6 +85,7 @@ export function Discover() {
           includeIngredients: ingredients,
           cuisine: selectedCuisine,
           diet: selectedDiet,
+          pantryIngredients: sortedPantryItems.map((i) => i.ingredient_name),
         })
       } else {
         await searchByIngredients(ingredients)
@@ -164,7 +165,7 @@ export function Discover() {
     }
   }
 
-  const sortedResults = mode === 'pantry' && !hasFilters
+  const sortedResults = mode === 'pantry'
     ? [...results].sort((a, b) => {
         const aUsed = a.usedIngredientCount ?? 0
         const bUsed = b.usedIngredientCount ?? 0
@@ -454,7 +455,7 @@ export function Discover() {
                 saving={savingIds.has(result.id)}
                 saved={savedIds.has(result.id)}
                 onSave={() => handleSave(result)}
-                isPantryMode={mode === 'pantry' && !hasFilters}
+                isPantryMode={mode === 'pantry'}
               />
             ))}
           </div>
