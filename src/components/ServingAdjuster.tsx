@@ -20,6 +20,18 @@ export function ServingAdjuster({
 }: ServingAdjusterProps) {
   return (
     <div className="flex items-center gap-3">
+      {isModified && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReset}
+          className="text-muted-foreground"
+          aria-label="Reset to original servings"
+        >
+          <RotateCcw className="size-3" />
+          <span className="text-xs">Reset to {originalServings}</span>
+        </Button>
+      )}
       <span className="text-sm font-medium">Servings:</span>
       <div className="flex items-center gap-1">
         <Button
@@ -41,18 +53,6 @@ export function ServingAdjuster({
           <Plus className="size-4" />
         </Button>
       </div>
-      {isModified && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onReset}
-          className="text-muted-foreground"
-          aria-label="Reset to original servings"
-        >
-          <RotateCcw className="size-3" />
-          <span className="text-xs">Reset to {originalServings}</span>
-        </Button>
-      )}
     </div>
   )
 }
