@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Search,
@@ -10,12 +10,14 @@ import {
   Check,
   X,
   ChefHat,
+  Timer,
 } from 'lucide-react'
 import { useRecipeDiscovery } from '@/hooks/useRecipeDiscovery'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
 import { mapSpoonacularToRecipe, CUISINES, DIETS } from '@/utils/spoonacularMapper'
+import { sortByPerishability, getPerishabilityTier } from '@/utils/perishability'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +26,9 @@ import { cn } from '@/lib/utils'
 import type { DiscoverResult } from '@/types/spoonacular'
 
 type DiscoverMode = 'pantry' | 'search'
+
+const PANTRY_CHIP_LIMIT = 15
+const USE_IT_UP_THRESHOLD = 3
 
 export function Discover() {
   const navigate = useNavigate()
@@ -42,6 +47,7 @@ export function Discover() {
   } = useRecipeDiscovery()
 
   const { items: pantryItems, loading: pantryLoading } = usePantryItems()
+  const autoSearched = useRef(false)
 
   const hasPantryItems = pantryItems.length > 0
   const [mode, setMode] = useState<DiscoverMode>('pantry')
@@ -53,6 +59,19 @@ export function Discover() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
 
+  const sortedPantryItems = sortByPerishability(pantryItems)
+  const hasFilters = selectedCuisine || selectedDiet
+
+  useEffect(() => {
+    if (pantryLoading || autoSearched.current || !hasPantryItems) return
+    autoSearched.current = true
+    setHasSearched(true)
+    const ingredients = sortByPerishability(pantryItems)
+      .map((i) => i.ingredient_name)
+      .join(',')
+    searchByIngredients(ingredients)
+  }, [pantryLoading, hasPantryItems, pantryItems, searchByIngredients])
+
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault()
     setSaveError(null)
@@ -60,8 +79,16 @@ export function Discover() {
     if (mode === 'pantry') {
       if (!hasPantryItems) return
       setHasSearched(true)
-      const ingredients = pantryItems.map((i) => i.ingredient_name).join(',')
-      await searchByIngredients(ingredients)
+      const ingredients = sortedPantryItems.map((i) => i.ingredient_name).join(',')
+      if (hasFilters) {
+        await search({
+          includeIngredients: ingredients,
+          cuisine: selectedCuisine,
+          diet: selectedDiet,
+        })
+      } else {
+        await searchByIngredients(ingredients)
+      }
     } else {
       if (!query.trim() && !selectedCuisine && !selectedDiet) return
       setHasSearched(true)
@@ -92,11 +119,11 @@ export function Discover() {
   const handleModeSwitch = (newMode: DiscoverMode) => {
     if (newMode === mode) return
     setMode(newMode)
+    setSelectedCuisine('')
+    setSelectedDiet('')
     setHasSearched(false)
     reset()
   }
-
-  const PANTRY_CHIP_LIMIT = 15
 
   const handleSave = async (result: DiscoverResult) => {
     if (!user || !household || savingIds.has(result.id)) return
@@ -136,6 +163,19 @@ export function Discover() {
       })
     }
   }
+
+  const sortedResults = mode === 'pantry' && !hasFilters
+    ? [...results].sort((a, b) => {
+        const aUsed = a.usedIngredientCount ?? 0
+        const bUsed = b.usedIngredientCount ?? 0
+        const aMissed = a.missedIngredientCount ?? 0
+        const bMissed = b.missedIngredientCount ?? 0
+        if (aMissed === 0 && bMissed > 0) return -1
+        if (bMissed === 0 && aMissed > 0) return 1
+        if (bUsed !== aUsed) return bUsed - aUsed
+        return aMissed - bMissed
+      })
+    : results
 
   const hasMore = results.length < totalResults
 
@@ -195,20 +235,86 @@ export function Discover() {
             ) : (
               <>
                 <div className="flex flex-wrap gap-1.5">
-                  {pantryItems.slice(0, PANTRY_CHIP_LIMIT).map((item) => (
-                    <span
-                      key={item.id}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground"
-                    >
-                      {item.ingredient_name}
-                    </span>
-                  ))}
+                  {sortedPantryItems.slice(0, PANTRY_CHIP_LIMIT).map((item) => {
+                    const isPerishable = getPerishabilityTier(item.category) === 'HIGH'
+                    return (
+                      <span
+                        key={item.id}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                          isPerishable
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {isPerishable && <Timer className="size-3" />}
+                        {item.ingredient_name}
+                      </span>
+                    )
+                  })}
                   {pantryItems.length > PANTRY_CHIP_LIMIT && (
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                       +{pantryItems.length - PANTRY_CHIP_LIMIT} more
                     </span>
                   )}
                 </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium mb-2">Cuisine</p>
+                    <div className="flex flex-wrap gap-2">
+                      {CUISINES.map((cuisine) => (
+                        <button
+                          key={cuisine}
+                          type="button"
+                          onClick={() => handleCuisineToggle(cuisine)}
+                          className={cn(
+                            'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                            selectedCuisine === cuisine
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                          )}
+                        >
+                          {cuisine}
+                          {selectedCuisine === cuisine && <X className="size-3" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium mb-2">Diet</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DIETS.map((diet) => (
+                        <button
+                          key={diet}
+                          type="button"
+                          onClick={() => handleDietToggle(diet)}
+                          className={cn(
+                            'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                            selectedDiet === diet
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                          )}
+                        >
+                          {diet}
+                          {selectedDiet === diet && <X className="size-3" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {hasFilters && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
+                </div>
+
                 <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                   {loading ? (
                     <>
@@ -324,16 +430,6 @@ export function Discover() {
         </div>
       )}
 
-      {!hasSearched && !loading && mode === 'pantry' && hasPantryItems && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <ChefHat className="size-16 text-muted-foreground/40 mb-4" />
-          <h2 className="text-xl font-medium mb-2">What can you make?</h2>
-          <p className="text-muted-foreground max-w-md">
-            Search using your {pantryItems.length} pantry item{pantryItems.length !== 1 ? 's' : ''} to find recipes you can cook right now.
-          </p>
-        </div>
-      )}
-
       {hasSearched && !loading && results.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Search className="size-16 text-muted-foreground/40 mb-4" />
@@ -344,20 +440,21 @@ export function Discover() {
         </div>
       )}
 
-      {results.length > 0 && (
+      {sortedResults.length > 0 && (
         <>
           <p className="text-sm text-muted-foreground mb-4">
             {totalResults} recipe{totalResults !== 1 ? 's' : ''} found
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {results.map((result) => (
+            {sortedResults.map((result) => (
               <DiscoverCard
                 key={result.id}
                 result={result}
                 saving={savingIds.has(result.id)}
                 saved={savedIds.has(result.id)}
                 onSave={() => handleSave(result)}
+                isPantryMode={mode === 'pantry' && !hasFilters}
               />
             ))}
           </div>
@@ -393,14 +490,22 @@ function DiscoverCard({
   saving,
   saved,
   onSave,
+  isPantryMode = false,
 }: {
   result: DiscoverResult
   saving: boolean
   saved: boolean
   onSave: () => void
+  isPantryMode?: boolean
 }) {
+  const used = result.usedIngredientCount ?? 0
+  const missed = result.missedIngredientCount ?? 0
+  const total = used + missed
+  const canMakeAll = isPantryMode && missed === 0 && used > 0
+  const isUseItUp = isPantryMode && used >= USE_IT_UP_THRESHOLD
+
   return (
-    <Card className="overflow-hidden">
+    <Card className={cn('overflow-hidden', canMakeAll && 'ring-2 ring-green-500/50')}>
       <div className="aspect-video relative bg-muted">
         {result.image ? (
           <img
@@ -413,35 +518,75 @@ function DiscoverCard({
             <UtensilsCrossed className="size-12 text-muted-foreground/40" />
           </div>
         )}
+        {isPantryMode && (canMakeAll || isUseItUp) && (
+          <div className="absolute top-2 right-2 flex gap-1.5">
+            {canMakeAll && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-600 text-white">
+                <Check className="size-3" />
+                Ready to cook
+              </span>
+            )}
+            {isUseItUp && !canMakeAll && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-500 text-white">
+                <Timer className="size-3" />
+                Use it up
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4 space-y-3">
         <h3 className="font-medium line-clamp-2">{result.title}</h3>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {result.readyInMinutes != null && result.readyInMinutes > 0 && (
-            <span className="flex items-center gap-1">
-              <Clock className="size-3.5" />
-              {result.readyInMinutes} min
-            </span>
-          )}
-          {result.servings != null && result.servings > 0 && (
-            <span className="flex items-center gap-1">
-              <UtensilsCrossed className="size-3.5" />
-              {result.servings} servings
-            </span>
-          )}
-          {result.usedIngredientCount != null && (
-            <span className="text-green-600">
-              {result.usedIngredientCount} matched
-            </span>
-          )}
-          {result.missedIngredientCount != null && (
-            <span className="text-orange-500">
-              {result.missedIngredientCount} missing
-            </span>
-          )}
-        </div>
+        {isPantryMode && total > 0 ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {used}/{total} ingredients
+              </span>
+              {missed === 0 ? (
+                <span className="font-medium text-green-600">All matched!</span>
+              ) : (
+                <span className="text-orange-500">{missed} to buy</span>
+              )}
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all',
+                  missed === 0 ? 'bg-green-500' : used / total > 0.7 ? 'bg-yellow-500' : 'bg-orange-400',
+                )}
+                style={{ width: `${(used / total) * 100}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {result.readyInMinutes != null && result.readyInMinutes > 0 && (
+              <span className="flex items-center gap-1">
+                <Clock className="size-3.5" />
+                {result.readyInMinutes} min
+              </span>
+            )}
+            {result.servings != null && result.servings > 0 && (
+              <span className="flex items-center gap-1">
+                <UtensilsCrossed className="size-3.5" />
+                {result.servings} servings
+              </span>
+            )}
+            {result.usedIngredientCount != null && (
+              <span className="text-green-600">
+                {result.usedIngredientCount} matched
+              </span>
+            )}
+            {result.missedIngredientCount != null && (
+              <span className="text-orange-500">
+                {result.missedIngredientCount} missing
+              </span>
+            )}
+          </div>
+        )}
 
         <Button
           size="sm"

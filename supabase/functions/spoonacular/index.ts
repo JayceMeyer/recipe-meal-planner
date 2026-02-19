@@ -171,6 +171,7 @@ async function handleSearch(
   const query = String(params.query || '')
   const cuisine = String(params.cuisine || '')
   const diet = String(params.diet || '')
+  const includeIngredients = String(params.includeIngredients || '')
   const offset = Number(params.offset || 0)
   const number = Math.min(Number(params.number || 12), 24)
 
@@ -183,8 +184,9 @@ async function handleSearch(
   })
   if (cuisine) searchParams.set('cuisine', cuisine)
   if (diet) searchParams.set('diet', diet)
+  if (includeIngredients) searchParams.set('includeIngredients', includeIngredients)
 
-  const cacheKey = `search:${hashKey({ query, cuisine, diet, offset, number })}`
+  const cacheKey = `search:${hashKey({ query, cuisine, diet, includeIngredients, offset, number })}`
   const url = `${SPOONACULAR_BASE}/complexSearch?${searchParams}`
 
   return fetchSpoonacular(url, supabase, cacheKey, householdId)
