@@ -110,7 +110,7 @@ export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
           variant="ghost"
           size="icon"
           onClick={onDelete}
-          className="shrink-0 opacity-0 group-hover:opacity-100 sm:opacity-100"
+          className="shrink-0 hidden sm:flex"
         >
           <Trash2 className="size-4" />
         </Button>
