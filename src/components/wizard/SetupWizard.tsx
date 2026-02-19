@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -7,13 +7,6 @@ import { PreferencesStep } from './PreferencesStep'
 import { ApiKeyStep } from './ApiKeyStep'
 import { RecipeSuggestionsStep } from './RecipeSuggestionsStep'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
-
-const STEPS = [
-  { label: 'Pantry Setup', description: 'Add your ingredients' },
-  { label: 'Preferences', description: 'Cuisine & diet' },
-  { label: 'API Key', description: 'Recipe discovery' },
-  { label: 'Recipes', description: 'Find recipes' },
-] as const
 
 interface SetupWizardProps {
   onComplete: () => void
@@ -24,11 +17,25 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
   const { preferences, markSetupComplete } = useUserPreferences()
   const hasApiKey = !!preferences?.spoonacular_api_key
 
+  const steps = useMemo(() => {
+    const base = [
+      { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
+      { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
+    ]
+    if (!hasApiKey) {
+      base.push({ key: 'apikey', label: 'API Key', description: 'Recipe discovery' })
+    }
+    base.push({ key: 'recipes', label: 'Recipes', description: 'Find recipes' })
+    return base
+  }, [hasApiKey])
+
+  const currentKey = steps[currentStep]?.key
+
   const handleNext = useCallback(() => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep((s) => s + 1)
     }
-  }, [currentStep])
+  }, [currentStep, steps.length])
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -56,8 +63,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       </div>
 
       <nav className="flex items-center justify-center gap-2">
-        {STEPS.map((step, index) => (
-          <div key={step.label} className="flex items-center gap-2">
+        {steps.map((step, index) => (
+          <div key={step.key} className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <div
                 className={cn(
@@ -78,7 +85,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 </p>
               </div>
             </div>
-            {index < STEPS.length - 1 && (
+            {index < steps.length - 1 && (
               <div className={cn(
                 'h-px w-8 sm:w-12',
                 index < currentStep ? 'bg-primary' : 'bg-muted',
@@ -89,10 +96,10 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       </nav>
 
       <div className="min-h-[400px]">
-        {currentStep === 0 && <PantrySetupStep onSkip={handleNext} />}
-        {currentStep === 1 && <PreferencesStep onSkip={handleNext} />}
-        {currentStep === 2 && <ApiKeyStep onSkip={handleNext} />}
-        {currentStep === 3 && (hasApiKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
+        {currentKey === 'pantry' && <PantrySetupStep onSkip={handleNext} />}
+        {currentKey === 'preferences' && <PreferencesStep onSkip={handleNext} />}
+        {currentKey === 'apikey' && <ApiKeyStep onSkip={handleNext} />}
+        {currentKey === 'recipes' && (hasApiKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
       </div>
 
       <div className="flex items-center justify-between">
@@ -106,7 +113,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           )}
         </div>
         <div>
-          {currentStep < STEPS.length - 1 ? (
+          {currentStep < steps.length - 1 ? (
             <Button onClick={handleNext}>Next</Button>
           ) : (
             <Button onClick={handleComplete}>Get started</Button>
