@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X, Loader2, Package } from 'lucide-react'
+import { Plus, X, Loader2, Package, RefreshCw } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   const { items, loading, error, addItem, deleteItem } = usePantryItems()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
+  const [suggestionPage, setSuggestionPage] = useState(0)
   const handleAdd = async (name?: string) => {
     const itemName = (name || inputValue).trim()
     if (!itemName) return
@@ -71,9 +72,22 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
 
       {suggestedItems.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Quick add common items:</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-muted-foreground">Quick add common items:</p>
+            {suggestedItems.length > 10 && (
+              <button
+                type="button"
+                onClick={() => setSuggestionPage((p) => (p + 1) * 10 >= suggestedItems.length ? 0 : p + 1)}
+                disabled={adding}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <RefreshCw className="size-3" />
+                More
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
-            {suggestedItems.slice(0, 10).map((name) => (
+            {suggestedItems.slice(suggestionPage * 10, suggestionPage * 10 + 10).map((name) => (
               <button
                 key={name}
                 type="button"
