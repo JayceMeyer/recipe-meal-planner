@@ -7,7 +7,6 @@ import { PreferencesStep } from './PreferencesStep'
 import { ApiKeyStep } from './ApiKeyStep'
 import { RecipeSuggestionsStep } from './RecipeSuggestionsStep'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
-import { useHouseholdApiKeys } from '@/hooks/useHouseholdApiKeys'
 
 const STEPS = [
   { label: 'Pantry Setup', description: 'Add your ingredients' },
@@ -22,15 +21,14 @@ interface SetupWizardProps {
 
 export function SetupWizard({ onComplete }: SetupWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const { markSetupComplete } = useUserPreferences()
-  const { hasKey, refresh: refreshKeys } = useHouseholdApiKeys()
+  const { preferences, markSetupComplete } = useUserPreferences()
+  const hasApiKey = !!preferences?.spoonacular_api_key
 
   const handleNext = useCallback(() => {
-    if (currentStep === 2) refreshKeys()
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((s) => s + 1)
     }
-  }, [currentStep, refreshKeys])
+  }, [currentStep])
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -94,7 +92,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
         {currentStep === 0 && <PantrySetupStep onSkip={handleNext} />}
         {currentStep === 1 && <PreferencesStep onSkip={handleNext} />}
         {currentStep === 2 && <ApiKeyStep onSkip={handleNext} />}
-        {currentStep === 3 && (hasKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
+        {currentStep === 3 && (hasApiKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
       </div>
 
       <div className="flex items-center justify-between">

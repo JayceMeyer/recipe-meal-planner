@@ -54,7 +54,7 @@ export function useRecipeDiscovery(): UseRecipeDiscoveryResult {
         body: { ...body, householdId: household?.id },
       })
 
-      if (fnError) throw new Error(fnError.message)
+      if (fnError) throw new Error(data?.error || fnError.message)
       if (data?.error) throw new Error(data.error)
       return data
     },
