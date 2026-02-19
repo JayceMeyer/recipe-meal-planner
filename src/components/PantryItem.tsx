@@ -72,39 +72,39 @@ export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
         )}
         style={{ transform: `translateX(-${swipeOffset}px)` }}
       >
-        <div className="flex-1 min-w-0">
-          {isEditing ? (
-            <div className="flex items-center gap-1">
-              <Input
-                ref={inputRef}
-                value={editQuantity}
-                onChange={(e) => setEditQuantity(e.target.value)}
-                onBlur={handleSave}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSave()
-                  if (e.key === 'Escape') {
-                    setEditQuantity(item.quantity || '')
-                    setIsEditing(false)
-                  }
-                }}
-                placeholder="Qty"
-                className="w-20 h-7 text-sm"
-              />
-              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave}>
-                <Check className="size-4" />
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-left hover:underline"
-            >
-              {item.quantity && <span className="font-medium">{item.quantity} </span>}
-              {item.unit && <span>{item.unit} </span>}
-              <span>{item.ingredient_name}</span>
-            </button>
-          )}
-        </div>
+        <span className="flex-1 min-w-0 truncate">{item.ingredient_name}</span>
+
+        {isEditing ? (
+          <div className="flex items-center gap-1 shrink-0">
+            <Input
+              ref={inputRef}
+              value={editQuantity}
+              onChange={(e) => setEditQuantity(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave()
+                if (e.key === 'Escape') {
+                  setEditQuantity(item.quantity || '')
+                  setIsEditing(false)
+                }
+              }}
+              placeholder="Qty"
+              className="w-20 h-7 text-sm"
+            />
+            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave}>
+              <Check className="size-4" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setEditQuantity(item.quantity || ''); setIsEditing(true) }}
+            className="shrink-0 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {item.quantity || item.unit
+              ? <span>{[item.quantity, item.unit].filter(Boolean).join(' ')}</span>
+              : <span className="text-xs">+ qty</span>}
+          </button>
+        )}
 
         <Button
           variant="ghost"

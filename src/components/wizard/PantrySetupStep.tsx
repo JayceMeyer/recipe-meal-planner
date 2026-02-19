@@ -73,7 +73,7 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
         <div>
           <p className="text-xs text-muted-foreground mb-2">Quick add common items:</p>
           <div className="flex flex-wrap gap-2">
-            {suggestedItems.slice(0, 8).map((name) => (
+            {suggestedItems.slice(0, 10).map((name) => (
               <button
                 key={name}
                 type="button"

@@ -47,9 +47,9 @@ export function Home() {
         <p className="text-muted-foreground">What would you like to cook today?</p>
       </div>
 
-      <QuickAccessCards />
       <PantryQuickTool />
       <TodaysMeals />
+      <QuickAccessCards />
     </div>
   )
 }

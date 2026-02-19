@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Loader2, Plus, Package } from 'lucide-react'
+import { ChevronDown, ChevronRight, Loader2, Plus, Package, Search } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
 import { PantryItem } from '@/components/PantryItem'
@@ -19,6 +19,7 @@ export function Pantry() {
   const { canMake, almostMakeable, loading: suggestionsLoading } = usePantrySuggestions()
 
   const [newItemName, setNewItemName] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
@@ -50,6 +51,19 @@ export function Pantry() {
 
     return result
   }, [items])
+
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return groups
+    const query = searchQuery.toLowerCase()
+    return groups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) =>
+          item.ingredient_name.toLowerCase().includes(query),
+        ),
+      }))
+      .filter((group) => group.items.length > 0)
+  }, [groups, searchQuery])
 
   const handleAddItem = async () => {
     if (!newItemName.trim()) return
@@ -110,6 +124,19 @@ export function Pantry() {
               {adding ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
             </Button>
           </div>
+
+          {items.length > 0 && (
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search pantry..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -138,7 +165,7 @@ export function Pantry() {
           </div>
         ) : (
           <div className="space-y-6">
-            {groups.map((group) => (
+            {filteredGroups.map((group) => (
               <div key={group.category}>
                 <button
                   onClick={() => toggleCategory(group.category)}
