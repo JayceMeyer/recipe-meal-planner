@@ -10,6 +10,7 @@ interface UseUserPreferencesResult {
   error: string | null
   updatePreferences: (cuisines: string[], dietary: string[]) => Promise<boolean>
   updateTheme: (theme: ColorTheme) => Promise<boolean>
+  updateApiKey: (key: string | null) => Promise<boolean>
   markSetupComplete: () => Promise<boolean>
   resetSetup: () => Promise<boolean>
   refresh: () => Promise<void>
@@ -134,6 +135,28 @@ export function useUserPreferences(): UseUserPreferencesResult {
     [preferences],
   )
 
+  const updateApiKey = useCallback(
+    async (key: string | null): Promise<boolean> => {
+      if (!preferences) return false
+
+      const { data, error: updateError } = await supabase
+        .from('user_preferences')
+        .update({ spoonacular_api_key: key })
+        .eq('id', preferences.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        setError(updateError.message)
+        return false
+      }
+
+      setPreferences(data)
+      return true
+    },
+    [preferences],
+  )
+
   const markSetupComplete = useCallback(async (): Promise<boolean> => {
     if (!preferences) return false
 
@@ -184,6 +207,7 @@ export function useUserPreferences(): UseUserPreferencesResult {
     error,
     updatePreferences,
     updateTheme,
+    updateApiKey,
     markSetupComplete,
     resetSetup,
     refresh: fetchOrCreate,

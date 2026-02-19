@@ -4,12 +4,15 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PantrySetupStep } from './PantrySetupStep'
 import { PreferencesStep } from './PreferencesStep'
+import { ApiKeyStep } from './ApiKeyStep'
 import { RecipeSuggestionsStep } from './RecipeSuggestionsStep'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { useHouseholdApiKeys } from '@/hooks/useHouseholdApiKeys'
 
 const STEPS = [
   { label: 'Pantry Setup', description: 'Add your ingredients' },
   { label: 'Preferences', description: 'Cuisine & diet' },
+  { label: 'API Key', description: 'Recipe discovery' },
   { label: 'Recipes', description: 'Find recipes' },
 ] as const
 
@@ -20,12 +23,14 @@ interface SetupWizardProps {
 export function SetupWizard({ onComplete }: SetupWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const { markSetupComplete } = useUserPreferences()
+  const { hasKey, refresh: refreshKeys } = useHouseholdApiKeys()
 
   const handleNext = useCallback(() => {
+    if (currentStep === 2) refreshKeys()
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((s) => s + 1)
     }
-  }, [currentStep])
+  }, [currentStep, refreshKeys])
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
@@ -88,7 +93,8 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       <div className="min-h-[400px]">
         {currentStep === 0 && <PantrySetupStep onSkip={handleNext} />}
         {currentStep === 1 && <PreferencesStep onSkip={handleNext} />}
-        {currentStep === 2 && <RecipeSuggestionsStep />}
+        {currentStep === 2 && <ApiKeyStep onSkip={handleNext} />}
+        {currentStep === 3 && (hasKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
       </div>
 
       <div className="flex items-center justify-between">
@@ -109,6 +115,19 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function RecipeSuggestionsGated() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+      <p className="text-muted-foreground">
+        Recipe discovery requires a Spoonacular API key.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        You can add one later in your Profile settings, or go back to the previous step.
+      </p>
     </div>
   )
 }

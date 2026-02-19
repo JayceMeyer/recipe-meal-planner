@@ -11,8 +11,10 @@ import {
   X,
   ChefHat,
   Timer,
+  Key,
 } from 'lucide-react'
 import { useRecipeDiscovery } from '@/hooks/useRecipeDiscovery'
+import { useHouseholdApiKeys } from '@/hooks/useHouseholdApiKeys'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
@@ -34,6 +36,7 @@ export function Discover() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { household } = useHousehold()
+  const { hasKey, loading: keysLoading } = useHouseholdApiKeys()
   const {
     results,
     totalResults,
@@ -178,6 +181,40 @@ export function Discover() {
     : results
 
   const hasMore = results.length < totalResults
+
+  if (keysLoading) {
+    return (
+      <div className="container py-6">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!hasKey) {
+    return (
+      <div className="container py-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Sparkles className="size-6 text-primary" />
+          <h1 className="text-2xl font-bold">Discover Recipes</h1>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Key className="size-16 text-muted-foreground/40 mb-4" />
+          <h2 className="text-xl font-medium mb-2">API key required</h2>
+          <p className="text-muted-foreground max-w-md mb-4">
+            To discover recipes, you or a household member needs to add a Spoonacular API key.
+          </p>
+          <Link
+            to="/profile"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            Go to Profile Settings
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container py-6">
