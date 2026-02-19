@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { PantryItemEditDialog } from '@/components/PantryItemEditDialog'
 import type { PantryItem as PantryItemType } from '@/types/database'
 
 interface PantryItemProps {
   item: PantryItemType
   onDelete: () => void
-  onUpdate: (updates: { ingredient_name?: string; quantity?: string; unit?: string }) => void
+  onUpdate: (updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }) => void
 }
 
 export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
@@ -16,6 +17,7 @@ export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
   const [editQuantity, setEditQuantity] = useState(item.quantity || '')
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [swipeOffset, setSwipeOffset] = useState(0)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -53,68 +55,83 @@ export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
   }
 
   return (
-    <div
-      className="relative overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <>
       <div
-        className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive text-destructive-foreground px-4"
-        style={{ width: swipeOffset }}
+        className="relative overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        <Trash2 className="size-5" />
-      </div>
-
-      <div
-        className={cn(
-          'flex items-center gap-3 p-3 bg-background border-b transition-transform'
-        )}
-        style={{ transform: `translateX(-${swipeOffset}px)` }}
-      >
-        <span className="flex-1 min-w-0 truncate">{item.ingredient_name}</span>
-
-        {isEditing ? (
-          <div className="flex items-center gap-1 shrink-0">
-            <Input
-              ref={inputRef}
-              value={editQuantity}
-              onChange={(e) => setEditQuantity(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSave()
-                if (e.key === 'Escape') {
-                  setEditQuantity(item.quantity || '')
-                  setIsEditing(false)
-                }
-              }}
-              placeholder="Qty"
-              className="w-20 h-7 text-sm"
-            />
-            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave}>
-              <Check className="size-4" />
-            </Button>
-          </div>
-        ) : (
-          <button
-            onClick={() => { setEditQuantity(item.quantity || ''); setIsEditing(true) }}
-            className="shrink-0 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {item.quantity || item.unit
-              ? <span>{[item.quantity, item.unit].filter(Boolean).join(' ')}</span>
-              : <span className="text-xs">+ qty</span>}
-          </button>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDelete}
-          className="shrink-0 hidden sm:flex"
+        <div
+          className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive text-destructive-foreground px-4"
+          style={{ width: swipeOffset }}
         >
-          <Trash2 className="size-4" />
-        </Button>
+          <Trash2 className="size-5" />
+        </div>
+
+        <div
+          className={cn(
+            'flex items-center gap-3 p-3 bg-background border-b transition-transform'
+          )}
+          style={{ transform: `translateX(-${swipeOffset}px)` }}
+        >
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="flex items-center gap-2 flex-1 min-w-0 text-left group"
+          >
+            <span className="truncate">{item.ingredient_name}</span>
+            <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+
+          {isEditing ? (
+            <div className="flex items-center gap-1 shrink-0">
+              <Input
+                ref={inputRef}
+                value={editQuantity}
+                onChange={(e) => setEditQuantity(e.target.value)}
+                onBlur={handleSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSave()
+                  if (e.key === 'Escape') {
+                    setEditQuantity(item.quantity || '')
+                    setIsEditing(false)
+                  }
+                }}
+                placeholder="Qty"
+                className="w-20 h-7 text-sm"
+              />
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSave}>
+                <Check className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setEditQuantity(item.quantity || ''); setIsEditing(true) }}
+              className="shrink-0 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {item.quantity || item.unit
+                ? <span>{[item.quantity, item.unit].filter(Boolean).join(' ')}</span>
+                : <span className="text-xs">+ qty</span>}
+            </button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            className="shrink-0 hidden sm:flex"
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <PantryItemEditDialog
+        item={item}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSave={onUpdate}
+      />
+    </>
   )
 }

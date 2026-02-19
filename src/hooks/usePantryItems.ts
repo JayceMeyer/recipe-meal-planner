@@ -9,8 +9,8 @@ interface UsePantryItemsResult {
   items: PantryItem[]
   loading: boolean
   error: string | null
-  addItem: (ingredientName: string, quantity?: string, unit?: string) => Promise<PantryItem | null>
-  updateItem: (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string }) => Promise<boolean>
+  addItem: (ingredientName: string, quantity?: string, unit?: string, category?: string) => Promise<PantryItem | null>
+  updateItem: (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }) => Promise<boolean>
   deleteItem: (id: string) => Promise<boolean>
   addItems: (items: { ingredient_name: string; quantity?: string; unit?: string }[]) => Promise<boolean>
   refresh: () => Promise<void>
@@ -61,10 +61,10 @@ export function usePantryItems(): UsePantryItemsResult {
   }, [fetchItems])
 
   const addItem = useCallback(
-    async (ingredientName: string, quantity?: string, unit?: string): Promise<PantryItem | null> => {
+    async (ingredientName: string, quantity?: string, unit?: string, category?: string): Promise<PantryItem | null> => {
       if (!user || !household) return null
 
-      const category = categorizeIngredient(ingredientName)
+      const resolvedCategory = category || categorizeIngredient(ingredientName)
 
       const { data, error: insertError } = await supabase
         .from('pantry_items')
@@ -74,7 +74,7 @@ export function usePantryItems(): UsePantryItemsResult {
           ingredient_name: ingredientName,
           quantity: quantity || null,
           unit: unit || null,
-          category,
+          category: resolvedCategory,
         })
         .select()
         .single()
@@ -91,10 +91,10 @@ export function usePantryItems(): UsePantryItemsResult {
   )
 
   const updateItem = useCallback(
-    async (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string }): Promise<boolean> => {
+    async (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }): Promise<boolean> => {
       const updateData: Record<string, string | null | undefined> = { ...updates }
 
-      if (updates.ingredient_name) {
+      if (updates.ingredient_name && !updates.category) {
         updateData.category = categorizeIngredient(updates.ingredient_name)
       }
 

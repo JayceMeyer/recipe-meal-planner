@@ -19,6 +19,7 @@ export function Pantry() {
   const { canMake, almostMakeable, loading: suggestionsLoading } = usePantrySuggestions()
 
   const [newItemName, setNewItemName] = useState('')
+  const [newItemCategory, setNewItemCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
@@ -65,13 +66,17 @@ export function Pantry() {
       .filter((group) => group.items.length > 0)
   }, [groups, searchQuery])
 
+  const autoCategory = newItemName.trim() ? categorizeIngredient(newItemName.trim()) : ''
+  const selectedCategory = newItemCategory || autoCategory
+
   const handleAddItem = async () => {
     if (!newItemName.trim()) return
 
     setAdding(true)
-    await addItem(newItemName.trim())
+    await addItem(newItemName.trim(), undefined, undefined, newItemCategory || undefined)
     setAdding(false)
     setNewItemName('')
+    setNewItemCategory('')
   }
 
   const toggleCategory = (category: string) => {
@@ -124,6 +129,21 @@ export function Pantry() {
               {adding ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
             </Button>
           </div>
+
+          {newItemName.trim() && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-muted-foreground shrink-0">Category:</span>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setNewItemCategory(e.target.value)}
+                className="flex-1 h-8 rounded-md border border-input bg-transparent px-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {items.length > 0 && (
             <div className="relative mt-2">
