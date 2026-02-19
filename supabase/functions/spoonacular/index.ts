@@ -26,14 +26,32 @@ function hashKey(params: Record<string, unknown>): string {
   return String(Math.abs(hash))
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+async function getHouseholdApiKeys(
+  supabase: ReturnType<typeof createClient>,
+  householdId: string,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from('user_preferences')
+    .select('spoonacular_api_key')
+    .eq('household_id', householdId)
+    .not('spoonacular_api_key', 'is', null)
+
+  if (!data) return []
+  return shuffle(data.map((row: { spoonacular_api_key: string }) => row.spoonacular_api_key))
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
-  }
-
-  const apiKey = Deno.env.get('SPOONACULAR_API_KEY')
-  if (!apiKey) {
-    return jsonResponse({ error: 'Spoonacular API key not configured' }, 500)
   }
 
   const supabase = createClient(
@@ -58,7 +76,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Missing action parameter' }, 400)
   }
 
-  // Check daily usage if household provided
+  const apiKeys: string[] = []
+  if (householdId) {
+    const householdKeys = await getHouseholdApiKeys(supabase, householdId)
+    apiKeys.push(...householdKeys)
+  }
+
+  if (apiKeys.length === 0) {
+    return jsonResponse({ error: 'No Spoonacular API key configured. Add one in your Profile settings.' }, 400)
+  }
+
   if (householdId) {
     const { data: usage } = await supabase
       .from('spoonacular_usage')
@@ -75,11 +102,11 @@ Deno.serve(async (req) => {
   try {
     switch (action) {
       case 'search':
-        return await handleSearch(supabase, apiKey, params, householdId)
+        return await handleSearch(supabase, apiKeys, params, householdId)
       case 'searchByIngredients':
-        return await handleSearchByIngredients(supabase, apiKey, params, householdId)
+        return await handleSearchByIngredients(supabase, apiKeys, params, householdId)
       case 'detail':
-        return await handleDetail(supabase, apiKey, params)
+        return await handleDetail(supabase, apiKeys, params)
       default:
         return jsonResponse({ error: `Unknown action: ${action}` }, 400)
     }
@@ -135,8 +162,9 @@ async function trackUsage(
   }
 }
 
-async function fetchSpoonacular(
-  url: string,
+async function fetchWithKeyRotation(
+  baseUrl: string,
+  apiKeys: string[],
   supabase: ReturnType<typeof createClient>,
   cacheKey: string,
   householdId?: string,
@@ -144,27 +172,32 @@ async function fetchSpoonacular(
   const cached = await checkCache(supabase, cacheKey)
   if (cached) return jsonResponse(cached)
 
-  const res = await fetch(url)
+  for (const key of apiKeys) {
+    const url = new URL(baseUrl)
+    url.searchParams.set('apiKey', key)
 
-  if (res.status === 402) {
-    const fallback = await checkCache(supabase, cacheKey)
-    if (fallback) return jsonResponse(fallback)
-    return jsonResponse({ error: 'Spoonacular daily limit reached. Try again tomorrow.' }, 429)
+    const res = await fetch(url.toString())
+
+    if (res.status === 402) continue
+
+    if (!res.ok) {
+      return jsonResponse({ error: `Spoonacular API error: ${res.status}` }, res.status)
+    }
+
+    const data = await res.json()
+    await setCache(supabase, cacheKey, data)
+    await trackUsage(supabase, householdId)
+    return jsonResponse(data)
   }
 
-  if (!res.ok) {
-    return jsonResponse({ error: `Spoonacular API error: ${res.status}` }, res.status)
-  }
-
-  const data = await res.json()
-  await setCache(supabase, cacheKey, data)
-  await trackUsage(supabase, householdId)
-  return jsonResponse(data)
+  const fallback = await checkCache(supabase, cacheKey)
+  if (fallback) return jsonResponse(fallback)
+  return jsonResponse({ error: 'All API keys exhausted. Try again tomorrow.' }, 429)
 }
 
 async function handleSearch(
   supabase: ReturnType<typeof createClient>,
-  apiKey: string,
+  apiKeys: string[],
   params: Record<string, unknown>,
   householdId?: string,
 ) {
@@ -175,57 +208,50 @@ async function handleSearch(
   const offset = Number(params.offset || 0)
   const number = Math.min(Number(params.number || 12), 24)
 
-  const searchParams = new URLSearchParams({
-    apiKey,
-    query,
-    number: String(number),
-    offset: String(offset),
-    addRecipeInformation: 'true',
-  })
-  if (cuisine) searchParams.set('cuisine', cuisine)
-  if (diet) searchParams.set('diet', diet)
-  if (includeIngredients) searchParams.set('includeIngredients', includeIngredients)
+  const url = new URL(`${SPOONACULAR_BASE}/complexSearch`)
+  url.searchParams.set('query', query)
+  url.searchParams.set('number', String(number))
+  url.searchParams.set('offset', String(offset))
+  url.searchParams.set('addRecipeInformation', 'true')
+  if (cuisine) url.searchParams.set('cuisine', cuisine)
+  if (diet) url.searchParams.set('diet', diet)
+  if (includeIngredients) url.searchParams.set('includeIngredients', includeIngredients)
 
   const cacheKey = `search:${hashKey({ query, cuisine, diet, includeIngredients, offset, number })}`
-  const url = `${SPOONACULAR_BASE}/complexSearch?${searchParams}`
 
-  return fetchSpoonacular(url, supabase, cacheKey, householdId)
+  return fetchWithKeyRotation(url.toString(), apiKeys, supabase, cacheKey, householdId)
 }
 
 async function handleSearchByIngredients(
   supabase: ReturnType<typeof createClient>,
-  apiKey: string,
+  apiKeys: string[],
   params: Record<string, unknown>,
   householdId?: string,
 ) {
   const ingredients = String(params.ingredients || '')
   const number = Math.min(Number(params.number || 12), 24)
 
-  const searchParams = new URLSearchParams({
-    apiKey,
-    ingredients,
-    number: String(number),
-    ranking: '1',
-    ignorePantry: 'true',
-  })
+  const url = new URL(`${SPOONACULAR_BASE}/findByIngredients`)
+  url.searchParams.set('ingredients', ingredients)
+  url.searchParams.set('number', String(number))
+  url.searchParams.set('ranking', '1')
+  url.searchParams.set('ignorePantry', 'true')
 
   const cacheKey = `ingredients:${hashKey({ ingredients, number })}`
-  const url = `${SPOONACULAR_BASE}/findByIngredients?${searchParams}`
 
-  return fetchSpoonacular(url, supabase, cacheKey, householdId)
+  return fetchWithKeyRotation(url.toString(), apiKeys, supabase, cacheKey, householdId)
 }
 
 async function handleDetail(
   supabase: ReturnType<typeof createClient>,
-  apiKey: string,
+  apiKeys: string[],
   params: Record<string, unknown>,
 ) {
   const id = Number(params.id)
   if (!id) return jsonResponse({ error: 'Missing recipe id' }, 400)
 
-  const searchParams = new URLSearchParams({ apiKey })
+  const url = new URL(`${SPOONACULAR_BASE}/${id}/information`)
   const cacheKey = `detail:${id}`
-  const url = `${SPOONACULAR_BASE}/${id}/information?${searchParams}`
 
-  return fetchSpoonacular(url, supabase, cacheKey)
+  return fetchWithKeyRotation(url.toString(), apiKeys, supabase, cacheKey)
 }

@@ -4,6 +4,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { HouseholdSection } from '@/components/HouseholdSection'
+import { ApiKeySection } from '@/components/ApiKeySection'
 import { ThemePicker } from '@/components/ThemePicker'
 import { cn } from '@/lib/utils'
 
@@ -67,6 +68,8 @@ export function Profile() {
       </Card>
 
       <HouseholdSection />
+
+      <ApiKeySection />
 
       <Card>
         <CardHeader>

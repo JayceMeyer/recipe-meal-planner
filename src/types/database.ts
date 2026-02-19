@@ -458,6 +458,7 @@ export interface Database {
           cuisine_preferences: string[]
           dietary_restrictions: string[]
           color_theme: string | null
+          spoonacular_api_key: string | null
           setup_completed: boolean
           setup_completed_at: string | null
           created_at: string
@@ -470,6 +471,7 @@ export interface Database {
           cuisine_preferences?: string[]
           dietary_restrictions?: string[]
           color_theme?: string | null
+          spoonacular_api_key?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string
@@ -482,6 +484,7 @@ export interface Database {
           cuisine_preferences?: string[]
           dietary_restrictions?: string[]
           color_theme?: string | null
+          spoonacular_api_key?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string
