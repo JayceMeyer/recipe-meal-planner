@@ -4,16 +4,11 @@ import { usePantryItems } from '@/hooks/usePantryItems'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient } from '@/utils/ingredientCategories'
+import { COMMON_PANTRY_ITEMS } from '@/data/commonPantryItems'
 
 interface PantrySetupStepProps {
   onSkip: () => void
 }
-
-const COMMON_ITEMS = [
-  'Olive Oil', 'Salt', 'Pepper', 'Garlic', 'Onion', 'Butter',
-  'Eggs', 'Milk', 'Rice', 'Pasta', 'Flour', 'Sugar',
-  'Chicken', 'Tomatoes', 'Cheese', 'Bread',
-]
 
 export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   const { items, loading, error, addItem, deleteItem } = usePantryItems()
@@ -30,7 +25,7 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   }
 
   const existingNames = new Set(items.map((i) => i.ingredient_name.toLowerCase()))
-  const suggestedItems = COMMON_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
+  const suggestedItems = COMMON_PANTRY_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
 
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const cat = (!item.category || item.category === 'Pantry')
