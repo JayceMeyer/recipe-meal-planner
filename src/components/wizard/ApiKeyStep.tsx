@@ -2,20 +2,17 @@ import { useState } from 'react'
 import { Key, ExternalLink, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useUserPreferences } from '@/hooks/useUserPreferences'
 
 interface ApiKeyStepProps {
+  hasApiKey: boolean
+  updateApiKey: (key: string | null) => Promise<boolean>
   onSkip: () => void
 }
 
-export function ApiKeyStep({ onSkip }: ApiKeyStepProps) {
-  const { preferences, updateApiKey } = useUserPreferences()
-  const hasKey = !!preferences?.spoonacular_api_key
-
+export function ApiKeyStep({ hasApiKey, updateApiKey, onSkip }: ApiKeyStepProps) {
   const [inputValue, setInputValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(hasKey)
 
   const handleSave = async () => {
     const trimmed = inputValue.trim()
@@ -45,7 +42,6 @@ export function ApiKeyStep({ onSkip }: ApiKeyStepProps) {
     const ok = await updateApiKey(trimmed)
     if (ok) {
       setInputValue('')
-      setSaved(true)
     } else {
       setError('Failed to save API key.')
     }
@@ -84,7 +80,7 @@ export function ApiKeyStep({ onSkip }: ApiKeyStepProps) {
         </ol>
       </div>
 
-      {saved ? (
+      {hasApiKey ? (
         <div className="flex items-center gap-2 p-3 rounded-md bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300">
           <Check className="size-4" />
           <span className="text-sm font-medium">API key saved! Recipe discovery is ready.</span>

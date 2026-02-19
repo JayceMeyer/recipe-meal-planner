@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -10,24 +10,27 @@ import { useUserPreferences } from '@/hooks/useUserPreferences'
 
 interface SetupWizardProps {
   onComplete: () => void
+  initialHasApiKey: boolean
 }
 
-export function SetupWizard({ onComplete }: SetupWizardProps) {
+export function SetupWizard({ onComplete, initialHasApiKey }: SetupWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const { preferences, markSetupComplete } = useUserPreferences()
+  const { preferences, updateApiKey, markSetupComplete } = useUserPreferences()
   const hasApiKey = !!preferences?.spoonacular_api_key
+  const showApiKeyStep = !initialHasApiKey
 
-  const steps = useMemo(() => {
-    const base = [
-      { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
-      { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
-    ]
-    if (!hasApiKey) {
-      base.push({ key: 'apikey', label: 'API Key', description: 'Recipe discovery' })
-    }
-    base.push({ key: 'recipes', label: 'Recipes', description: 'Find recipes' })
-    return base
-  }, [hasApiKey])
+  const steps = showApiKeyStep
+    ? [
+        { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
+        { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
+        { key: 'apikey', label: 'API Key', description: 'Recipe discovery' },
+        { key: 'recipes', label: 'Recipes', description: 'Find recipes' },
+      ]
+    : [
+        { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
+        { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
+        { key: 'recipes', label: 'Recipes', description: 'Find recipes' },
+      ]
 
   const currentKey = steps[currentStep]?.key
 
@@ -98,7 +101,7 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       <div className="min-h-[400px]">
         {currentKey === 'pantry' && <PantrySetupStep onSkip={handleNext} />}
         {currentKey === 'preferences' && <PreferencesStep onSkip={handleNext} />}
-        {currentKey === 'apikey' && <ApiKeyStep onSkip={handleNext} />}
+        {currentKey === 'apikey' && <ApiKeyStep hasApiKey={hasApiKey} updateApiKey={updateApiKey} onSkip={handleNext} />}
         {currentKey === 'recipes' && (hasApiKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
       </div>
 

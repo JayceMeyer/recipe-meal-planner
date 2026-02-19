@@ -33,7 +33,7 @@ export function Home() {
   if (!wizardJustCompleted && (!preferences || !preferences.setup_completed)) {
     return (
       <div className="py-8">
-        <SetupWizard onComplete={handleWizardComplete} />
+        <SetupWizard onComplete={handleWizardComplete} initialHasApiKey={!!preferences?.spoonacular_api_key} />
       </div>
     )
   }
