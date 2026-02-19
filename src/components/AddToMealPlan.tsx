@@ -84,7 +84,7 @@ export function AddToMealPlan({ recipeId }: AddToMealPlanProps) {
       currentPlan = { ...newPlan, entries: [] }
     }
 
-    const entry = await addEntry(currentPlan.id, recipeId, selectedDate, selectedMealType)
+    const entry = await addEntry(currentPlan.id, selectedDate, selectedMealType, { recipeId })
     setSaving(false)
 
     if (entry) {
