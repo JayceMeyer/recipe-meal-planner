@@ -78,6 +78,7 @@ export interface DiscoverSearchParams {
   cuisine?: string
   diet?: string
   ingredients?: string
+  includeIngredients?: string
   offset?: number
   number?: number
 }
