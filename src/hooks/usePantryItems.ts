@@ -54,7 +54,7 @@ export function usePantryItems(): UsePantryItemsResult {
 
   useEffect(() => {
     isMounted.current = true
-    fetchItems()
+    queueMicrotask(() => { fetchItems() })
     return () => {
       isMounted.current = false
     }

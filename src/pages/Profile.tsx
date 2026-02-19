@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { HouseholdSection } from '@/components/HouseholdSection'
+import { ThemePicker } from '@/components/ThemePicker'
 import { cn } from '@/lib/utils'
 
 const CUISINE_OPTIONS = [
@@ -21,21 +21,13 @@ export function Profile() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const { preferences, updatePreferences, resetSetup } = useUserPreferences()
-  const [cuisines, setCuisines] = useState<string[]>([])
-  const [dietary, setDietary] = useState<string[]>([])
-
-  useEffect(() => {
-    if (preferences) {
-      setCuisines(preferences.cuisine_preferences)
-      setDietary(preferences.dietary_restrictions)
-    }
-  }, [preferences])
+  const cuisines = preferences?.cuisine_preferences ?? []
+  const dietary = preferences?.dietary_restrictions ?? []
 
   const toggleCuisine = (cuisine: string) => {
     const next = cuisines.includes(cuisine)
       ? cuisines.filter((c) => c !== cuisine)
       : [...cuisines, cuisine]
-    setCuisines(next)
     updatePreferences(next, dietary)
   }
 
@@ -43,7 +35,6 @@ export function Profile() {
     const next = dietary.includes(restriction)
       ? dietary.filter((d) => d !== restriction)
       : [...dietary, restriction]
-    setDietary(next)
     updatePreferences(cuisines, next)
   }
 
@@ -76,6 +67,16 @@ export function Profile() {
       </Card>
 
       <HouseholdSection />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Choose a color theme</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemePicker />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

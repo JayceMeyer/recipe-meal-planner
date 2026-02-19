@@ -2,13 +2,14 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
-import type { UserPreferences } from '@/types/database'
+import type { UserPreferences, ColorTheme } from '@/types/database'
 
 interface UseUserPreferencesResult {
   preferences: UserPreferences | null
   loading: boolean
   error: string | null
   updatePreferences: (cuisines: string[], dietary: string[]) => Promise<boolean>
+  updateTheme: (theme: ColorTheme) => Promise<boolean>
   markSetupComplete: () => Promise<boolean>
   resetSetup: () => Promise<boolean>
   refresh: () => Promise<void>
@@ -80,7 +81,7 @@ export function useUserPreferences(): UseUserPreferencesResult {
 
   useEffect(() => {
     isMounted.current = true
-    fetchOrCreate()
+    queueMicrotask(() => { fetchOrCreate() })
     return () => {
       isMounted.current = false
     }
@@ -96,6 +97,28 @@ export function useUserPreferences(): UseUserPreferencesResult {
           cuisine_preferences: cuisines,
           dietary_restrictions: dietary,
         })
+        .eq('id', preferences.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        setError(updateError.message)
+        return false
+      }
+
+      setPreferences(data)
+      return true
+    },
+    [preferences],
+  )
+
+  const updateTheme = useCallback(
+    async (theme: ColorTheme): Promise<boolean> => {
+      if (!preferences) return false
+
+      const { data, error: updateError } = await supabase
+        .from('user_preferences')
+        .update({ color_theme: theme })
         .eq('id', preferences.id)
         .select()
         .single()
@@ -160,6 +183,7 @@ export function useUserPreferences(): UseUserPreferencesResult {
     loading,
     error,
     updatePreferences,
+    updateTheme,
     markSetupComplete,
     resetSetup,
     refresh: fetchOrCreate,

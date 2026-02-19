@@ -457,6 +457,7 @@ export interface Database {
           user_id: string
           cuisine_preferences: string[]
           dietary_restrictions: string[]
+          color_theme: string | null
           setup_completed: boolean
           setup_completed_at: string | null
           created_at: string
@@ -468,6 +469,7 @@ export interface Database {
           user_id: string
           cuisine_preferences?: string[]
           dietary_restrictions?: string[]
+          color_theme?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string
@@ -479,6 +481,7 @@ export interface Database {
           user_id?: string
           cuisine_preferences?: string[]
           dietary_restrictions?: string[]
+          color_theme?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string
@@ -615,6 +618,8 @@ export type MealPlanEntryInsert = TablesInsert<'meal_plan_entries'>
 export type MealPlanEntryUpdate = TablesUpdate<'meal_plan_entries'>
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export type ColorTheme = 'kitchen' | 'midnight' | 'creamsicle' | 'coffee' | 'tiki' | 'herb-garden' | 'berry' | 'ocean'
 
 export type UserPreferences = Tables<'user_preferences'>
 export type UserPreferencesInsert = TablesInsert<'user_preferences'>

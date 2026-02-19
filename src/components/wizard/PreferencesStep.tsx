@@ -22,18 +22,11 @@ interface PreferencesStepProps {
 
 export function PreferencesStep({ onSkip }: PreferencesStepProps) {
   const { preferences, updatePreferences } = useUserPreferences()
-  const [cuisines, setCuisines] = useState<string[]>([])
-  const [dietary, setDietary] = useState<string[]>([])
+  const cuisines = preferences?.cuisine_preferences ?? []
+  const dietary = preferences?.dietary_restrictions ?? []
   const [cuisineInput, setCuisineInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const suggestionsRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (preferences) {
-      setCuisines(preferences.cuisine_preferences)
-      setDietary(preferences.dietary_restrictions)
-    }
-  }, [preferences])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -49,7 +42,6 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
     const next = cuisines.includes(cuisine)
       ? cuisines.filter((c) => c !== cuisine)
       : [...cuisines, cuisine]
-    setCuisines(next)
     updatePreferences(next, dietary)
   }
 
@@ -60,7 +52,6 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
 
     const formatted = value.charAt(0).toUpperCase() + value.slice(1)
     const next = [...cuisines, formatted]
-    setCuisines(next)
     updatePreferences(next, dietary)
     setCuisineInput('')
     setShowSuggestions(false)
@@ -68,7 +59,6 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
 
   const removeCuisine = (cuisine: string) => {
     const next = cuisines.filter((c) => c !== cuisine)
-    setCuisines(next)
     updatePreferences(next, dietary)
   }
 
@@ -76,7 +66,6 @@ export function PreferencesStep({ onSkip }: PreferencesStepProps) {
     const next = dietary.includes(restriction)
       ? dietary.filter((d) => d !== restriction)
       : [...dietary, restriction]
-    setDietary(next)
     updatePreferences(cuisines, next)
   }
 
