@@ -1,4 +1,27 @@
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  'Spices & Seasonings': [
+    'salt', 'pepper', 'spice', 'cumin', 'paprika', 'cinnamon', 'nutmeg',
+    'clove', 'turmeric', 'curry', 'chili powder', 'cayenne', 'garlic powder',
+    'onion powder', 'italian seasoning', 'bay leaf', 'seasoning',
+  ],
+  'Oils & Vinegars': [
+    'olive oil', 'vegetable oil', 'canola oil', 'sesame oil',
+    'coconut oil', 'avocado oil', 'oil', 'vinegar', 'balsamic',
+  ],
+  Condiments: [
+    'soy sauce', 'hot sauce', 'ketchup', 'mustard', 'mayonnaise',
+    'honey', 'maple syrup', 'molasses', 'salsa', 'sauce', 'marinade',
+    'dressing', 'worcestershire', 'sriracha', 'bbq sauce',
+  ],
+  Baking: [
+    'flour', 'sugar', 'baking powder', 'baking soda', 'yeast', 'cornstarch',
+    'cocoa', 'chocolate', 'vanilla', 'powdered sugar', 'brown sugar',
+  ],
+  'Canned & Dried Goods': [
+    'canned', 'broth', 'stock', 'tomato sauce', 'tomato paste',
+    'coconut', 'raisin', 'date', 'dried', 'lentil', 'chickpea',
+    'black bean', 'kidney bean', 'pinto bean',
+  ],
   Produce: [
     'apple', 'banana', 'orange', 'lemon', 'lime', 'tomato', 'potato', 'onion',
     'garlic', 'ginger', 'carrot', 'celery', 'lettuce', 'spinach', 'kale',
@@ -35,19 +58,13 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'cake', 'pie', 'pastry', 'cookie', 'tortilla', 'pita', 'naan',
     'biscuit', 'cracker', 'breadcrumb', 'crouton', 'wrap',
   ],
-  Pantry: [
-    'flour', 'sugar', 'salt', 'pepper', 'oil', 'olive oil', 'vegetable oil',
-    'vinegar', 'soy sauce', 'hot sauce', 'ketchup', 'mustard', 'mayonnaise',
-    'honey', 'maple syrup', 'molasses', 'vanilla', 'baking powder',
-    'baking soda', 'yeast', 'cornstarch', 'cocoa', 'chocolate', 'rice',
-    'pasta', 'noodle', 'spaghetti', 'penne', 'macaroni', 'quinoa', 'oat',
-    'cereal', 'granola', 'nut', 'almond', 'walnut', 'pecan', 'cashew',
-    'peanut', 'seed', 'sesame', 'sunflower', 'coconut', 'raisin', 'date',
-    'dried', 'canned', 'broth', 'stock', 'tomato sauce', 'tomato paste',
-    'salsa', 'sauce', 'marinade', 'dressing', 'spice', 'cumin', 'paprika',
-    'cinnamon', 'nutmeg', 'clove', 'turmeric', 'curry', 'chili powder',
-    'cayenne', 'garlic powder', 'onion powder', 'italian seasoning',
-    'bay leaf', 'lentil', 'chickpea', 'black bean', 'kidney bean',
+  'Grains & Pasta': [
+    'rice', 'pasta', 'noodle', 'spaghetti', 'penne', 'macaroni', 'quinoa',
+    'oat', 'cereal', 'granola', 'couscous', 'barley', 'farro', 'bulgur',
+  ],
+  'Nuts & Seeds': [
+    'nut', 'almond', 'walnut', 'pecan', 'cashew', 'peanut', 'pistachio',
+    'seed', 'sesame', 'sunflower', 'flax', 'chia', 'pumpkin seed',
   ],
   Frozen: [
     'frozen', 'ice cream', 'popsicle', 'frozen pizza', 'frozen vegetable',
@@ -71,9 +88,15 @@ const CATEGORY_ORDER = [
   'Meat',
   'Seafood',
   'Bakery',
+  'Grains & Pasta',
+  'Spices & Seasonings',
+  'Oils & Vinegars',
+  'Condiments',
+  'Baking',
+  'Nuts & Seeds',
+  'Canned & Dried Goods',
   'Frozen',
   'Beverages',
-  'Pantry',
   'Other',
 ]
 

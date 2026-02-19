@@ -33,7 +33,9 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   const suggestedItems = COMMON_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
 
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
-    const cat = item.category || categorizeIngredient(item.ingredient_name)
+    const cat = (!item.category || item.category === 'Pantry')
+      ? categorizeIngredient(item.ingredient_name)
+      : item.category
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
@@ -72,7 +74,7 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
         <p className="text-sm text-destructive">{error}</p>
       )}
 
-      {suggestedItems.length > 0 && items.length < 5 && (
+      {suggestedItems.length > 0 && (
         <div>
           <p className="text-xs text-muted-foreground mb-2">Quick add common items:</p>
           <div className="flex flex-wrap gap-2">

@@ -26,7 +26,9 @@ export function Pantry() {
     const categoryMap = new Map<string, PantryItemType[]>()
 
     for (const item of items) {
-      const category = item.category || categorizeIngredient(item.ingredient_name)
+      const category = (!item.category || item.category === 'Pantry')
+        ? categorizeIngredient(item.ingredient_name)
+        : item.category
       const existing = categoryMap.get(category) || []
       categoryMap.set(category, [...existing, item])
     }
