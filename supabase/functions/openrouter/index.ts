@@ -24,12 +24,17 @@ async function getHouseholdOpenRouterConfig(
   supabase: ReturnType<typeof createClient>,
   householdId: string,
 ): Promise<OpenRouterConfig | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_preferences')
     .select('openrouter_api_key, openrouter_model')
     .eq('household_id', householdId)
     .not('openrouter_api_key', 'is', null)
     .limit(1)
+
+  if (error) {
+    console.error('Failed to fetch OpenRouter config:', error.message)
+    return null
+  }
 
   if (!data || data.length === 0) return null
 
@@ -113,57 +118,57 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  )
-
-  let body: ChatRequest
   try {
-    body = await req.json()
-  } catch {
-    return jsonResponse({ error: 'Invalid request body' })
-  }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
 
-  const { householdId, messages, tools, tool_results } = body
+    let body: ChatRequest
+    try {
+      body = await req.json()
+    } catch {
+      return jsonResponse({ error: 'Invalid request body' })
+    }
 
-  if (!householdId) {
-    return jsonResponse({ error: 'Missing householdId' })
-  }
+    const { householdId, messages, tools, tool_results } = body
 
-  if (!messages || messages.length === 0) {
-    return jsonResponse({ error: 'Missing messages' })
-  }
+    if (!householdId) {
+      return jsonResponse({ error: 'Missing householdId' })
+    }
 
-  const config = await getHouseholdOpenRouterConfig(supabase, householdId)
-  if (!config) {
-    return jsonResponse({
-      error: 'No OpenRouter API key configured. Add one in your Profile settings.',
-    })
-  }
+    if (!messages || messages.length === 0) {
+      return jsonResponse({ error: 'Missing messages' })
+    }
 
-  const chatMessages = [...messages]
-
-  if (tool_results) {
-    for (const result of tool_results) {
-      chatMessages.push({
-        role: 'tool',
-        content: result.content,
-        tool_call_id: result.tool_call_id,
+    const config = await getHouseholdOpenRouterConfig(supabase, householdId)
+    if (!config) {
+      return jsonResponse({
+        error: 'No OpenRouter API key configured. Add one in your Profile settings.',
       })
     }
-  }
 
-  const requestBody: Record<string, unknown> = {
-    model: config.model,
-    messages: chatMessages,
-  }
+    const chatMessages = [...messages]
 
-  if (tools && tools.length > 0) {
-    requestBody.tools = tools
-  }
+    if (tool_results) {
+      for (const result of tool_results) {
+        chatMessages.push({
+          role: 'tool',
+          content: result.content,
+          tool_call_id: result.tool_call_id,
+        })
+      }
+    }
 
-  try {
+    const requestBody: Record<string, unknown> = {
+      model: config.model,
+      messages: chatMessages,
+    }
+
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools
+    }
+
     const res = await fetch(OPENROUTER_BASE, {
       method: 'POST',
       headers: {
@@ -190,7 +195,12 @@ Deno.serve(async (req) => {
     const data = await res.json()
 
     const totalTokens = data.usage?.total_tokens || 0
-    await trackUsage(supabase, householdId, totalTokens)
+    // Don't let usage tracking failure break the response
+    try {
+      await trackUsage(supabase, householdId, totalTokens)
+    } catch {
+      // usage tracking is non-critical
+    }
 
     return jsonResponse(data)
   } catch (err) {

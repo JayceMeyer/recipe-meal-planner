@@ -40,7 +40,7 @@ export function useAIMealPlan(): UseAIMealPlanResult {
     async (messages: Array<{ role: string; content: string; tool_calls?: unknown; tool_call_id?: string }>, tools?: unknown[]) => {
       if (!household) throw new Error('No household')
 
-      const { data, error: fnError } = await supabase.functions.invoke('openrouter', {
+      const { data, error: fnError, response } = await supabase.functions.invoke('openrouter', {
         body: {
           householdId: household.id,
           messages,
@@ -48,7 +48,18 @@ export function useAIMealPlan(): UseAIMealPlanResult {
         },
       })
 
-      if (fnError) throw new Error(fnError.message)
+      if (fnError) {
+        // The SDK returns a generic message for non-2xx; read the actual body
+        if (response) {
+          try {
+            const body = await response.json()
+            if (body?.error) throw new Error(body.error)
+          } catch (e) {
+            if (e instanceof Error && e.message !== fnError.message) throw e
+          }
+        }
+        throw new Error(fnError.message)
+      }
       if (data?.error) throw new Error(data.error)
       return data
     },
