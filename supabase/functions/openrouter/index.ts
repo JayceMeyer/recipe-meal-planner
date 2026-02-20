@@ -122,25 +122,24 @@ Deno.serve(async (req) => {
   try {
     body = await req.json()
   } catch {
-    return jsonResponse({ error: 'Invalid request body' }, 400)
+    return jsonResponse({ error: 'Invalid request body' })
   }
 
   const { householdId, messages, tools, tool_results } = body
 
   if (!householdId) {
-    return jsonResponse({ error: 'Missing householdId' }, 400)
+    return jsonResponse({ error: 'Missing householdId' })
   }
 
   if (!messages || messages.length === 0) {
-    return jsonResponse({ error: 'Missing messages' }, 400)
+    return jsonResponse({ error: 'Missing messages' })
   }
 
   const config = await getHouseholdOpenRouterConfig(supabase, householdId)
   if (!config) {
-    return jsonResponse(
-      { error: 'No OpenRouter API key configured. Add one in your Profile settings.' },
-      400,
-    )
+    return jsonResponse({
+      error: 'No OpenRouter API key configured. Add one in your Profile settings.',
+    })
   }
 
   const chatMessages = [...messages]
@@ -185,7 +184,7 @@ Deno.serve(async (req) => {
       } catch {
         // use default error message
       }
-      return jsonResponse({ error: errorMessage }, res.status)
+      return jsonResponse({ error: errorMessage })
     }
 
     const data = await res.json()
@@ -195,6 +194,6 @@ Deno.serve(async (req) => {
 
     return jsonResponse(data)
   } catch (err) {
-    return jsonResponse({ error: (err as Error).message || 'Internal error' }, 500)
+    return jsonResponse({ error: (err as Error).message || 'Internal error' })
   }
 })
