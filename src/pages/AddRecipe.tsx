@@ -172,7 +172,7 @@ export function AddRecipe() {
         </CardHeader>
 
         {!recipe ? (
-          <form onSubmit={handleScrape}>
+          <form onSubmit={handleScrape} className="flex flex-col gap-6">
             <CardContent className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
