@@ -11,6 +11,8 @@ interface UseUserPreferencesResult {
   updatePreferences: (cuisines: string[], dietary: string[]) => Promise<boolean>
   updateTheme: (theme: ColorTheme) => Promise<boolean>
   updateApiKey: (key: string | null) => Promise<boolean>
+  updateOpenRouterKey: (key: string | null) => Promise<boolean>
+  updateOpenRouterModel: (model: string) => Promise<boolean>
   markSetupComplete: () => Promise<boolean>
   resetSetup: () => Promise<boolean>
   refresh: () => Promise<void>
@@ -157,6 +159,50 @@ export function useUserPreferences(): UseUserPreferencesResult {
     [preferences],
   )
 
+  const updateOpenRouterKey = useCallback(
+    async (key: string | null): Promise<boolean> => {
+      if (!preferences) return false
+
+      const { data, error: updateError } = await supabase
+        .from('user_preferences')
+        .update({ openrouter_api_key: key })
+        .eq('id', preferences.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        setError(updateError.message)
+        return false
+      }
+
+      setPreferences(data)
+      return true
+    },
+    [preferences],
+  )
+
+  const updateOpenRouterModel = useCallback(
+    async (model: string): Promise<boolean> => {
+      if (!preferences) return false
+
+      const { data, error: updateError } = await supabase
+        .from('user_preferences')
+        .update({ openrouter_model: model })
+        .eq('id', preferences.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        setError(updateError.message)
+        return false
+      }
+
+      setPreferences(data)
+      return true
+    },
+    [preferences],
+  )
+
   const markSetupComplete = useCallback(async (): Promise<boolean> => {
     if (!preferences) return false
 
@@ -208,6 +254,8 @@ export function useUserPreferences(): UseUserPreferencesResult {
     updatePreferences,
     updateTheme,
     updateApiKey,
+    updateOpenRouterKey,
+    updateOpenRouterModel,
     markSetupComplete,
     resetSetup,
     refresh: fetchOrCreate,

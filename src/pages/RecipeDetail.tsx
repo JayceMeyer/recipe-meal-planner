@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
+  Check,
   Clock,
   Edit,
   ExternalLink,
   Loader2,
   Plus,
+  Sparkles,
   Trash2,
 } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
@@ -31,7 +33,8 @@ import {
 export function RecipeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { recipe, loading, error, deleteRecipe } = useRecipe(id)
+  const { recipe, loading, error, deleteRecipe, promoteRecipe } = useRecipe(id)
+  const [promoting, setPromoting] = useState(false)
   const { groups } = useGroups()
   const { groupIds, setGroups: saveGroups } = useRecipeGroups(id)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -48,6 +51,12 @@ export function RecipeDetail() {
     reset,
     isModified,
   } = useServingCalculator(recipe?.servings ?? 0, recipe?.ingredients ?? [])
+
+  const handlePromote = async () => {
+    setPromoting(true)
+    await promoteRecipe()
+    setPromoting(false)
+  }
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -119,8 +128,31 @@ export function RecipeDetail() {
         <div className={recipe.image_url ? '-mt-16 relative' : 'mt-4'}>
           <div className={recipe.image_url ? 'bg-background rounded-t-xl p-6' : ''}>
             <div className="flex flex-col gap-3 mb-4">
-              <h1 className="text-2xl font-bold">{recipe.title}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{recipe.title}</h1>
+                {recipe.source === 'ai' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                    <Sparkles className="size-3" />
+                    AI Generated
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
+                {recipe.source === 'ai' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePromote}
+                    disabled={promoting}
+                  >
+                    {promoting ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Check className="size-4" />
+                    )}
+                    Save to Collection
+                  </Button>
+                )}
                 <AddToMealPlan recipeId={recipe.id} />
                 <Button variant="outline" size="icon" asChild>
                   <Link to={`/recipes/${recipe.id}/edit`}>

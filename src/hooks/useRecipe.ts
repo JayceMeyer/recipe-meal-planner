@@ -7,6 +7,7 @@ interface UseRecipeResult {
   loading: boolean
   error: string | null
   deleteRecipe: () => Promise<boolean>
+  promoteRecipe: () => Promise<boolean>
 }
 
 export function useRecipe(id: string | undefined): UseRecipeResult {
@@ -69,5 +70,24 @@ export function useRecipe(id: string | undefined): UseRecipeResult {
     return true
   }
 
-  return { recipe, loading, error, deleteRecipe }
+  const promoteRecipe = async (): Promise<boolean> => {
+    if (!id) return false
+
+    const { data, error: updateError } = await supabase
+      .from('recipes')
+      .update({ source: null })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      setError(updateError.message)
+      return false
+    }
+
+    setRecipe(data)
+    return true
+  }
+
+  return { recipe, loading, error, deleteRecipe, promoteRecipe }
 }

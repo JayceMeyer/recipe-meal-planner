@@ -6,15 +6,22 @@ import {
   Loader2,
   CalendarDays,
   Plus,
-  X,
+  Sparkles,
   UtensilsCrossed,
 } from 'lucide-react'
 import { useMealPlan } from '@/hooks/useMealPlan'
 import { useRecipes } from '@/hooks/useRecipes'
+import { useAuth } from '@/contexts/AuthContext'
+import { useHousehold } from '@/contexts/HouseholdContext'
+import { supabase } from '@/lib/supabase'
 import { RecipePickerDialog } from '@/components/RecipePickerDialog'
+import { AIGenerateDialog } from '@/components/meal-plan/AIGenerateDialog'
+import { MealSlotMenu } from '@/components/meal-plan/MealSlotMenu'
+import { useAIMealPlan } from '@/hooks/useAIMealPlan'
 import { GenerateGroceryList } from '@/components/GenerateGroceryList'
 import { Button } from '@/components/ui/button'
 import type { MealType, Recipe } from '@/types/database'
+import type { PlannedMeal } from '@/types/aiMealPlan'
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS: Record<MealType, string> = {
@@ -63,12 +70,17 @@ function isCurrentWeek(weekStart: string): boolean {
 
 export function MealPlan() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()))
-  const { plan, loading, error, createWeekPlan, addEntry, removeEntry } = useMealPlan(weekStart)
+  const { plan, loading, error, createWeekPlan, addEntry, removeEntry, refresh } = useMealPlan(weekStart)
   const { recipes } = useRecipes()
+  const { user } = useAuth()
+  const { household } = useHousehold()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerTarget, setPickerTarget] = useState<{ date: string; mealType: MealType } | null>(
     null
   )
+  const [aiDialogOpen, setAiDialogOpen] = useState(false)
+  const { regenerateSlot } = useAIMealPlan()
+  const [swapTarget, setSwapTarget] = useState<{ entryId: string; date: string; mealType: MealType } | null>(null)
 
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart])
 
@@ -127,6 +139,168 @@ export function MealPlan() {
     [pickerTarget, ensurePlan, addEntry]
   )
 
+  const handleAIMealsGenerated = useCallback(
+    async (meals: PlannedMeal[]) => {
+      if (!user || !household) return
+
+      let currentPlan = plan
+      if (!currentPlan) {
+        const created = await createWeekPlan(weekStart)
+        if (!created) return
+        currentPlan = { ...created, entries: [] }
+      }
+
+      for (const meal of meals) {
+        let recipeId = meal.saved_recipe_id
+
+        if (meal.source === 'generated' || !recipeId) {
+          const { data: newRecipe } = await supabase
+            .from('recipes')
+            .insert({
+              user_id: user.id,
+              household_id: household.id,
+              title: meal.recipe_title,
+              description: meal.description,
+              ingredients: meal.ingredients,
+              steps: meal.steps,
+              servings: meal.servings,
+              prep_time: meal.prep_time,
+              cook_time: meal.cook_time,
+              cuisine: meal.cuisine,
+              source: 'ai',
+            })
+            .select()
+            .single()
+
+          if (newRecipe) {
+            recipeId = newRecipe.id
+          }
+        }
+
+        if (recipeId) {
+          await addEntry(currentPlan.id, meal.date, meal.meal_type, { recipeId })
+        }
+      }
+
+      await refresh()
+    },
+    [user, household, plan, weekStart, createWeekPlan, addEntry, refresh],
+  )
+
+  const handleSwapPickRecipe = useCallback(
+    (entryId: string, date: string, mealType: MealType) => {
+      setSwapTarget({ entryId, date, mealType })
+      setPickerTarget({ date, mealType })
+      setPickerOpen(true)
+    },
+    [],
+  )
+
+  const handleSwapCustom = useCallback(
+    (entryId: string, date: string, mealType: MealType) => {
+      setSwapTarget({ entryId, date, mealType })
+      setPickerTarget({ date, mealType })
+      setPickerOpen(true)
+    },
+    [],
+  )
+
+  const handleSwapRegenerate = useCallback(
+    async (entryId: string, date: string, mealType: MealType) => {
+      if (!user || !household || !plan) return
+
+      const existingMeals: PlannedMeal[] = plan.entries
+        .filter((e) => e.id !== entryId)
+        .map((e) => {
+          const r = e.recipe_id ? recipeMap.get(e.recipe_id) : null
+          return {
+            date: e.date,
+            meal_type: e.meal_type,
+            recipe_title: r?.title || e.notes || 'Meal',
+            description: r?.description || '',
+            ingredients: r?.ingredients || [],
+            steps: r?.steps || [],
+            servings: r?.servings || 4,
+            prep_time: r?.prep_time || 0,
+            cook_time: r?.cook_time || 0,
+            cuisine: r?.cuisine || [],
+            source: 'saved' as const,
+          }
+        })
+
+      const newMeal = await regenerateSlot(date, mealType, existingMeals)
+      if (!newMeal) return
+
+      await removeEntry(entryId)
+
+      let recipeId = newMeal.saved_recipe_id
+      if (newMeal.source === 'generated' || !recipeId) {
+        const { data: newRecipe } = await supabase
+          .from('recipes')
+          .insert({
+            user_id: user.id,
+            household_id: household.id,
+            title: newMeal.recipe_title,
+            description: newMeal.description,
+            ingredients: newMeal.ingredients,
+            steps: newMeal.steps,
+            servings: newMeal.servings,
+            prep_time: newMeal.prep_time,
+            cook_time: newMeal.cook_time,
+            cuisine: newMeal.cuisine,
+            source: 'ai',
+          })
+          .select()
+          .single()
+
+        if (newRecipe) recipeId = newRecipe.id
+      }
+
+      if (recipeId) {
+        await addEntry(plan.id, date, mealType, { recipeId })
+      }
+
+      await refresh()
+    },
+    [user, household, plan, recipeMap, regenerateSlot, removeEntry, addEntry, refresh],
+  )
+
+  const originalHandleRecipeSelect = handleRecipeSelect
+  const wrappedHandleRecipeSelect = useCallback(
+    async (recipe: Recipe) => {
+      if (swapTarget) {
+        await removeEntry(swapTarget.entryId)
+        const currentPlan = await ensurePlan()
+        if (currentPlan) {
+          await addEntry(currentPlan.id, swapTarget.date, swapTarget.mealType, { recipeId: recipe.id })
+        }
+        setSwapTarget(null)
+        setPickerTarget(null)
+      } else {
+        await originalHandleRecipeSelect(recipe)
+      }
+    },
+    [swapTarget, removeEntry, ensurePlan, addEntry, originalHandleRecipeSelect],
+  )
+
+  const originalHandleCustomMeal = handleCustomMeal
+  const wrappedHandleCustomMeal = useCallback(
+    async (text: string) => {
+      if (swapTarget) {
+        await removeEntry(swapTarget.entryId)
+        const currentPlan = await ensurePlan()
+        if (currentPlan) {
+          await addEntry(currentPlan.id, swapTarget.date, swapTarget.mealType, { notes: text })
+        }
+        setSwapTarget(null)
+        setPickerTarget(null)
+      } else {
+        await originalHandleCustomMeal(text)
+      }
+    },
+    [swapTarget, removeEntry, ensurePlan, addEntry, originalHandleCustomMeal],
+  )
+
   const getEntries = useCallback(
     (date: string, mealType: MealType) => {
       if (!plan) return []
@@ -156,6 +330,10 @@ export function MealPlan() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">Meal Plan</h1>
+          <Button variant="outline" size="sm" onClick={() => setAiDialogOpen(true)}>
+            <Sparkles className="size-4" />
+            AI Generate
+          </Button>
           {plan && plan.entries.length > 0 && <GenerateGroceryList plan={plan} />}
         </div>
         <div className="flex items-center gap-2">
@@ -236,13 +414,13 @@ export function MealPlan() {
                           ) : (
                             <span className="text-muted-foreground">{entry.notes || 'Meal'}</span>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => removeEntry(entry.id)}
-                            className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="size-3" />
-                          </button>
+                          <MealSlotMenu
+                            compact
+                            onRegenerate={() => handleSwapRegenerate(entry.id, date, mealType)}
+                            onPickRecipe={() => handleSwapPickRecipe(entry.id, date, mealType)}
+                            onCustomEntry={() => handleSwapCustom(entry.id, date, mealType)}
+                            onRemove={() => removeEntry(entry.id)}
+                          />
                         </div>
                       )
                     })}
@@ -310,13 +488,12 @@ export function MealPlan() {
                               {entry.notes || 'Meal'}
                             </span>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={() => removeEntry(entry.id)}
-                          >
-                            <X className="size-3" />
-                          </Button>
+                          <MealSlotMenu
+                            onRegenerate={() => handleSwapRegenerate(entry.id, date, mealType)}
+                            onPickRecipe={() => handleSwapPickRecipe(entry.id, date, mealType)}
+                            onCustomEntry={() => handleSwapCustom(entry.id, date, mealType)}
+                            onRemove={() => removeEntry(entry.id)}
+                          />
                         </div>
                       )
                     })}
@@ -349,9 +526,19 @@ export function MealPlan() {
 
       <RecipePickerDialog
         open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={handleRecipeSelect}
-        onCustomMeal={handleCustomMeal}
+        onOpenChange={(open) => {
+          setPickerOpen(open)
+          if (!open) setSwapTarget(null)
+        }}
+        onSelect={wrappedHandleRecipeSelect}
+        onCustomMeal={wrappedHandleCustomMeal}
+      />
+
+      <AIGenerateDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        weekDates={weekDates}
+        onMealsGenerated={handleAIMealsGenerated}
       />
     </div>
   )

@@ -151,6 +151,7 @@ export interface Database {
           notes: string | null
           rating: number | null
           cuisine: string[]
+          source: string | null
           created_at: string
           updated_at: string
         }
@@ -170,6 +171,7 @@ export interface Database {
           notes?: string | null
           rating?: number | null
           cuisine?: string[]
+          source?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -189,6 +191,7 @@ export interface Database {
           notes?: string | null
           rating?: number | null
           cuisine?: string[]
+          source?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -459,6 +462,8 @@ export interface Database {
           dietary_restrictions: string[]
           color_theme: string | null
           spoonacular_api_key: string | null
+          openrouter_api_key: string | null
+          openrouter_model: string | null
           setup_completed: boolean
           setup_completed_at: string | null
           created_at: string
@@ -472,6 +477,8 @@ export interface Database {
           dietary_restrictions?: string[]
           color_theme?: string | null
           spoonacular_api_key?: string | null
+          openrouter_api_key?: string | null
+          openrouter_model?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string
@@ -485,6 +492,8 @@ export interface Database {
           dietary_restrictions?: string[]
           color_theme?: string | null
           spoonacular_api_key?: string | null
+          openrouter_api_key?: string | null
+          openrouter_model?: string | null
           setup_completed?: boolean
           setup_completed_at?: string | null
           created_at?: string

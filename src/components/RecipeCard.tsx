@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Clock, Star, UtensilsCrossed } from 'lucide-react'
+import { Clock, Sparkles, Star, UtensilsCrossed } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { GroupBadge } from '@/components/GroupBadge'
 import type { Recipe, RecipeGroup } from '@/types/database'
@@ -31,7 +31,15 @@ export function RecipeCard({ recipe, groups = [] }: RecipeCardProps) {
           )}
         </div>
         <CardContent className="p-4">
-          <h3 className="font-medium line-clamp-2 mb-2">{recipe.title}</h3>
+          <div className="flex items-start gap-2 mb-2">
+            <h3 className="font-medium line-clamp-2 flex-1">{recipe.title}</h3>
+            {recipe.source === 'ai' && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shrink-0">
+                <Sparkles className="size-3" />
+                AI
+              </span>
+            )}
+          </div>
           {groups.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {groups.map((group) => (

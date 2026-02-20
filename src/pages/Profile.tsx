@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { HouseholdSection } from '@/components/HouseholdSection'
 import { ApiKeySection } from '@/components/ApiKeySection'
+import { OpenRouterSection } from '@/components/OpenRouterSection'
 import { ThemePicker } from '@/components/ThemePicker'
 import { cn } from '@/lib/utils'
 
@@ -70,6 +71,8 @@ export function Profile() {
       <HouseholdSection />
 
       <ApiKeySection />
+
+      <OpenRouterSection />
 
       <Card>
         <CardHeader>
