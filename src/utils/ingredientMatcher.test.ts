@@ -44,6 +44,7 @@ function mockRecipe(id: string, title: string, ingredients: Ingredient[]): Recip
     notes: null,
     rating: null,
     cuisine: [],
+    source: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }

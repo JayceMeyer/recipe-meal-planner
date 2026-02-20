@@ -30,6 +30,7 @@ const mockRecipe: Recipe = {
   notes: 'Test notes',
   rating: 5,
   cuisine: [],
+  source: null,
   created_at: '2026-01-27T00:00:00Z',
   updated_at: '2026-01-27T00:00:00Z',
 }
