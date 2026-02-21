@@ -71,7 +71,7 @@ export function StepList({
               placeholder="Describe this step..."
               value={step.instruction}
               onChange={(e) => onUpdate(index, e.target.value)}
-              className="flex-1 min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className="flex-1 min-h-[80px] px-3 py-2 text-base md:text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               aria-label={`Step ${step.order} instruction`}
             />
 

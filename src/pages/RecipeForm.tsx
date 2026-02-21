@@ -140,7 +140,7 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
                 value={formData.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 placeholder="Brief description of the recipe"
-                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                className="w-full min-h-[80px] px-3 py-2 text-base md:text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
             </div>
 
@@ -281,7 +281,7 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
                 value={formData.notes}
                 onChange={(e) => updateField('notes', e.target.value)}
                 placeholder="Tips, variations, or other notes..."
-                className="w-full min-h-[100px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                className="w-full min-h-[100px] px-3 py-2 text-base md:text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
               />
             </div>
           </CardContent>

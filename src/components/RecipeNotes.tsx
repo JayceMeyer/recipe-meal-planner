@@ -57,7 +57,7 @@ export function RecipeNotes({
           value={notes}
           onChange={(e) => handleNotesChange(e.target.value)}
           placeholder="Add your personal notes, tips, or modifications..."
-          className="w-full min-h-[120px] px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+          className="w-full min-h-[120px] px-3 py-2 text-base md:text-sm rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
         />
         {error && (
           <p className="text-sm text-destructive">{error}</p>
