@@ -13,6 +13,34 @@ export function buildSystemPrompt(config: AIMealPlanConfig): string {
   const daysList = config.days.join(', ')
   const mealTypesList = config.mealTypes.join(', ')
 
+  let preserveSection = ''
+  if (config.preserveExisting && config.existingMeals.length > 0) {
+    const occupiedList = config.existingMeals
+      .map((m) => `- ${m.date} ${m.meal_type}: ${m.title}`)
+      .join('\n')
+
+    const occupiedKeys = new Set(
+      config.existingMeals.map((m) => `${m.date}|${m.meal_type}`)
+    )
+    const emptySlots = config.days
+      .flatMap((day) =>
+        config.mealTypes
+          .filter((mt) => !occupiedKeys.has(`${day}|${mt}`))
+          .map((mt) => `- ${day} ${mt}`)
+      )
+
+    preserveSection = `
+
+## IMPORTANT: Existing Meals (DO NOT REPLACE)
+
+The following slots already have meals. Do NOT plan meals for these slots:
+${occupiedList}
+
+ONLY plan meals for these empty slots:
+${emptySlots.length > 0 ? emptySlots.join('\n') : '(No empty slots — do not plan any meals)'}
+`
+  }
+
   return `You are a meal planning assistant. Your job is to create a weekly meal plan that prioritizes using perishable pantry items.
 
 ## Instructions
@@ -21,7 +49,7 @@ export function buildSystemPrompt(config: AIMealPlanConfig): string {
 2. Then call get_saved_recipes to see the user's recipe collection.
 3. Then call get_user_preferences to understand dietary restrictions and cuisine preferences.
 4. Plan meals for these dates: ${daysList}
-5. Plan these meal types for each day: ${mealTypesList}
+5. Plan these meal types for each day: ${mealTypesList}${preserveSection}
 
 ## Perishability Rules (CRITICAL)
 

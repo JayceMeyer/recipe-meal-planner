@@ -13,7 +13,7 @@ import {
 import { useAIMealPlan } from '@/hooks/useAIMealPlan'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import type { MealType } from '@/types/database'
-import type { AIMealPlanConfig, PlannedMeal } from '@/types/aiMealPlan'
+import type { AIMealPlanConfig, ExistingMealSlot, PlannedMeal } from '@/types/aiMealPlan'
 import { cn } from '@/lib/utils'
 
 const MEAL_TYPE_OPTIONS: { value: MealType; label: string }[] = [
@@ -29,6 +29,7 @@ interface AIGenerateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   weekDates: string[]
+  existingMeals: ExistingMealSlot[]
   onMealsGenerated: (meals: PlannedMeal[]) => void
 }
 
@@ -36,6 +37,7 @@ export function AIGenerateDialog({
   open,
   onOpenChange,
   weekDates,
+  existingMeals,
   onMealsGenerated,
 }: AIGenerateDialogProps) {
   const { generating, progress, error, generatePlan } = useAIMealPlan()
@@ -82,6 +84,7 @@ export function AIGenerateDialog({
       days: selectedDates,
       mealTypes: Array.from(selectedMealTypes),
       preserveExisting,
+      existingMeals: preserveExisting ? existingMeals : [],
     }
 
     const meals = await generatePlan(config)

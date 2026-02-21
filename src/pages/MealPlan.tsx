@@ -21,7 +21,7 @@ import { useAIMealPlan } from '@/hooks/useAIMealPlan'
 import { GenerateGroceryList } from '@/components/GenerateGroceryList'
 import { Button } from '@/components/ui/button'
 import type { MealType, Recipe } from '@/types/database'
-import type { PlannedMeal } from '@/types/aiMealPlan'
+import type { ExistingMealSlot, PlannedMeal } from '@/types/aiMealPlan'
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS: Record<MealType, string> = {
@@ -92,6 +92,15 @@ export function MealPlan() {
     return map
   }, [recipes])
 
+  const existingMeals: ExistingMealSlot[] = useMemo(() => {
+    if (!plan) return []
+    return plan.entries.map((e) => ({
+      date: e.date,
+      meal_type: e.meal_type,
+      title: e.recipe_id ? (recipeMap.get(e.recipe_id)?.title ?? e.notes ?? 'Planned meal') : (e.notes ?? 'Custom meal'),
+    }))
+  }, [plan, recipeMap])
+
   const navigateWeek = useCallback(
     (direction: number) => {
       const d = new Date(weekStart + 'T00:00:00')
@@ -150,7 +159,15 @@ export function MealPlan() {
         currentPlan = { ...created, entries: [] }
       }
 
-      for (const meal of meals) {
+      // Filter out meals for slots that already have entries (safety net)
+      const occupiedSlots = new Set(
+        currentPlan.entries.map((e) => `${e.date}|${e.meal_type}`)
+      )
+      const filteredMeals = meals.filter(
+        (m) => !occupiedSlots.has(`${m.date}|${m.meal_type}`)
+      )
+
+      for (const meal of filteredMeals) {
         let recipeId = meal.saved_recipe_id
 
         if (meal.source === 'generated' || !recipeId) {
@@ -538,6 +555,7 @@ export function MealPlan() {
         open={aiDialogOpen}
         onOpenChange={setAiDialogOpen}
         weekDates={weekDates}
+        existingMeals={existingMeals}
         onMealsGenerated={handleAIMealsGenerated}
       />
     </div>

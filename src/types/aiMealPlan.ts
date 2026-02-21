@@ -1,9 +1,16 @@
 import type { MealType, Ingredient, Step } from './database'
 
+export interface ExistingMealSlot {
+  date: string
+  meal_type: MealType
+  title: string
+}
+
 export interface AIMealPlanConfig {
   days: string[]
   mealTypes: MealType[]
   preserveExisting: boolean
+  existingMeals: ExistingMealSlot[]
 }
 
 export interface PlannedMeal {
