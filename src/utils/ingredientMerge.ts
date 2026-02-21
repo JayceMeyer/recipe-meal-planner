@@ -105,13 +105,6 @@ function findConversionGroup(
   return null
 }
 
-/** Preferred (display) unit for each conversion group — the most readable default */
-const GROUP_PREFERRED_UNIT: Record<string, string> = {
-  'volume-small': 'tsp',
-  'volume-large': 'cup',
-  'weight-metric': 'g',
-  'weight-imperial': 'oz',
-}
 
 function normalizeUnit(unit: string | undefined | null): string | null {
   if (!unit) return null
@@ -227,32 +220,6 @@ function tryConvertAndMerge(
   }
 }
 
-/**
- * Builds a combined quantity string when units are incompatible.
- * e.g., "4 cloves + 1 tsp"
- */
-function buildCombinedQuantity(
-  qty1: string | null,
-  unit1: string | null,
-  qty2: string | null,
-  unit2: string | null
-): { quantity: string; unit: string | null } {
-  const part1 = formatPart(qty1, unit1)
-  const part2 = formatPart(qty2, unit2)
-
-  if (!part1 && !part2) return { quantity: '', unit: null }
-  if (!part1) return { quantity: qty2 ?? '', unit: unit2 }
-  if (!part2) return { quantity: qty1 ?? '', unit: unit1 }
-
-  return { quantity: `${part1} + ${part2}`, unit: null }
-}
-
-function formatPart(qty: string | null, unit: string | null): string {
-  if (!qty && !unit) return ''
-  if (!qty) return unit ?? ''
-  if (!unit) return qty
-  return `${qty} ${unit}`
-}
 
 /**
  * Picks the best display name from the names we've seen for this ingredient.

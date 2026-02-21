@@ -57,6 +57,12 @@ export function useRecipe(id: string | undefined): UseRecipeResult {
   const deleteRecipe = async (): Promise<boolean> => {
     if (!id) return false
 
+    // Clean up stored image (fail silently)
+    if (recipe?.household_id) {
+      const path = `${recipe.household_id}/${id}.webp`
+      await supabase.storage.from('recipe-images').remove([path]).catch(() => {})
+    }
+
     const { error: deleteError } = await supabase
       .from('recipes')
       .delete()

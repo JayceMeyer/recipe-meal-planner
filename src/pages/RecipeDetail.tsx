@@ -1,17 +1,21 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
+  Camera,
   Check,
   Clock,
   Edit,
   ExternalLink,
+  ImagePlus,
   Loader2,
   Plus,
   Sparkles,
   Trash2,
 } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
+import { useImageUpload } from '@/hooks/useImageUpload'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import { useGroups, useRecipeGroups } from '@/hooks/useGroups'
 import { useServingCalculator } from '@/hooks/useServingCalculator'
 import { ServingAdjuster } from '@/components/ServingAdjuster'
@@ -40,6 +44,10 @@ export function RecipeDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showGroupEditor, setShowGroupEditor] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const { household } = useHousehold()
+  const { uploadImage, isUploading } = useImageUpload()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
 
   const recipeGroups = groups.filter((g) => groupIds.includes(g.id))
 
@@ -51,6 +59,19 @@ export function RecipeDetail() {
     reset,
     isModified,
   } = useServingCalculator(recipe?.servings ?? 0, recipe?.ingredients ?? [])
+
+  const displayImageUrl = uploadedUrl ?? recipe?.image_url
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !recipe || !household) return
+
+    const url = await uploadImage(recipe.id, household.id, file)
+    if (url) setUploadedUrl(url)
+
+    // Reset input so the same file can be re-selected
+    e.target.value = ''
+  }
 
   const handlePromote = async () => {
     setPromoting(true)
@@ -98,10 +119,17 @@ export function RecipeDetail() {
 
   return (
     <div className="pb-8 overflow-x-hidden">
-      {recipe.image_url ? (
-        <div className="relative h-64 sm:h-80">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      {displayImageUrl ? (
+        <div className="relative h-64 sm:h-80 group">
           <img
-            src={recipe.image_url}
+            src={displayImageUrl}
             alt={recipe.title}
             className="w-full h-full object-cover"
           />
@@ -114,19 +142,47 @@ export function RecipeDetail() {
           >
             <ArrowLeft className="size-5" />
           </Button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="absolute top-4 right-4 bg-black/20 text-white hover:bg-black/40 rounded-md p-2 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+            aria-label="Change photo"
+          >
+            {isUploading ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <Camera className="size-5" />
+            )}
+          </button>
         </div>
       ) : (
         <div className="container pt-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/recipes')}>
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/recipes')}>
+              <ArrowLeft className="size-4" />
+              Back
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImagePlus className="size-4" />
+              )}
+              Add Photo
+            </Button>
+          </div>
         </div>
       )}
 
       <div className="container">
-        <div className={recipe.image_url ? '-mt-16 relative' : 'mt-4'}>
-          <div className={recipe.image_url ? 'bg-background rounded-t-xl p-6' : ''}>
+        <div className={displayImageUrl ? '-mt-16 relative' : 'mt-4'}>
+          <div className={displayImageUrl ? 'bg-background rounded-t-xl p-6' : ''}>
             <div className="flex flex-col gap-3 mb-4">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold">{recipe.title}</h1>

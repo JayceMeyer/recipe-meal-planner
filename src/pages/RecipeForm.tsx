@@ -1,8 +1,10 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, X } from 'lucide-react'
+import { ArrowLeft, ImagePlus, Loader2, Trash2, X } from 'lucide-react'
 import { useRecipe } from '@/hooks/useRecipe'
 import { useRecipeForm } from '@/hooks/useRecipeForm'
+import { useImageUpload } from '@/hooks/useImageUpload'
+import { useHousehold } from '@/contexts/HouseholdContext'
 import { useGroups, useRecipeGroups } from '@/hooks/useGroups'
 import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
@@ -66,6 +68,12 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
     isValid,
   } = useRecipeForm(recipe ?? undefined)
 
+  const { household } = useHousehold()
+  const { uploadImage, isUploading } = useImageUpload()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
   const { groups, createGroup } = useGroups()
   const { groupIds: existingGroupIds, loading: groupsLoading, setGroups: saveGroupAssignments } = useRecipeGroups(recipe?.id)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
@@ -76,10 +84,45 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
     }
   }, [isEditMode, groupsLoading, existingGroupIds])
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Show instant preview
+    const objectUrl = URL.createObjectURL(file)
+    setPreviewUrl(objectUrl)
+
+    if (isEditMode && recipe && household) {
+      // Edit mode: upload immediately
+      const url = await uploadImage(recipe.id, household.id, file)
+      if (url) {
+        updateField('image_url', url)
+        URL.revokeObjectURL(objectUrl)
+        setPreviewUrl(null)
+      }
+    } else {
+      // Create mode: store file, upload after save
+      setPendingFile(file)
+    }
+
+    e.target.value = ''
+  }
+
+  const handleClearImage = () => {
+    updateField('image_url', '')
+    setPreviewUrl(null)
+    setPendingFile(null)
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     const savedId = await save()
     if (!savedId) return
+
+    // Upload pending image for newly created recipes
+    if (pendingFile && household) {
+      await uploadImage(savedId, household.id, pendingFile)
+    }
 
     if (isEditMode) {
       await saveGroupAssignments(selectedGroupIds)
@@ -145,15 +188,66 @@ function RecipeFormContent({ recipe }: { recipe?: ReturnType<typeof useRecipe>['
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="image_url" className="text-sm font-medium">
-                Image URL
-              </label>
+              <label className="text-sm font-medium">Image</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              {(previewUrl || formData.image_url) ? (
+                <div className="relative w-full aspect-video rounded-md overflow-hidden border border-input bg-muted">
+                  <img
+                    src={previewUrl || formData.image_url}
+                    alt="Recipe preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Loader2 className="size-6 animate-spin text-white" />
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="size-8 bg-black/40 text-white hover:bg-black/60"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      <ImagePlus className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="size-8 bg-black/40 text-white hover:bg-black/60"
+                      onClick={handleClearImage}
+                      disabled={isUploading}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full aspect-video rounded-md border-2 border-dashed border-input bg-muted/50 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  <ImagePlus className="size-8" />
+                  <span className="text-sm">Upload a photo</span>
+                </button>
+              )}
               <Input
                 id="image_url"
                 type="url"
                 value={formData.image_url}
                 onChange={(e) => updateField('image_url', e.target.value)}
-                placeholder="https://example.com/image.jpg"
+                placeholder="Or paste an image URL"
               />
             </div>
 
