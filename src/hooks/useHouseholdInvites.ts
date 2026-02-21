@@ -80,6 +80,7 @@ export function useHouseholdInvites(): UseHouseholdInvitesResult {
       }
 
       setInvites(prev => [data, ...prev])
+
       return data
     },
     [user, household]

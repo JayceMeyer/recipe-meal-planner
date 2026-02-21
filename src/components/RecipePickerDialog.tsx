@@ -43,6 +43,33 @@ export function RecipePickerDialog({ open, onOpenChange, onSelect, onCustomMeal 
         <DialogHeader>
           <DialogTitle>Add a Meal</DialogTitle>
         </DialogHeader>
+        {onCustomMeal && (
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <PenLine className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder="e.g. Leftover pizza"
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleCustomSubmit()
+                  }
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleCustomSubmit} disabled={!customText.trim()}>
+              Add
+            </Button>
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">Or pick from your recipes</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
@@ -93,36 +120,6 @@ export function RecipePickerDialog({ open, onOpenChange, onSelect, onCustomMeal 
                 </button>
               ))}
             </div>
-          )}
-
-          {onCustomMeal && (
-            <>
-              <div className="flex items-center gap-3 my-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">Or just type what you're making</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <PenLine className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input
-                    placeholder="e.g. Leftover pizza"
-                    value={customText}
-                    onChange={(e) => setCustomText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        handleCustomSubmit()
-                      }
-                    }}
-                    className="pl-10"
-                  />
-                </div>
-                <Button onClick={handleCustomSubmit} disabled={!customText.trim()}>
-                  Add
-                </Button>
-              </div>
-            </>
           )}
         </div>
       </DialogContent>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Copy, Check, X, UserMinus, Send, Pencil, Users, Loader2 } from 'lucide-react'
+import { Copy, Check, X, UserMinus, Link, Pencil, Users, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
@@ -16,6 +16,7 @@ export function HouseholdSection() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
+  const [justCreated, setJustCreated] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [householdName, setHouseholdName] = useState('')
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
@@ -71,9 +72,20 @@ export function HouseholdSection() {
     if (!inviteEmail.trim()) return
 
     setInviting(true)
-    await createInvite(inviteEmail)
+    const invite = await createInvite(inviteEmail)
     setInviteEmail('')
     setInviting(false)
+
+    if (invite) {
+      const link = `${window.location.origin}/join/${invite.token}`
+      navigator.clipboard.writeText(link)
+      setCopiedToken(invite.token)
+      setJustCreated(true)
+      setTimeout(() => {
+        setCopiedToken(null)
+        setJustCreated(false)
+      }, 3000)
+    }
   }
 
   const handleCopyLink = (token: string) => {
@@ -182,6 +194,9 @@ export function HouseholdSection() {
 
         <div>
           <label className="text-sm font-medium">Invite Someone</label>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Create an invite link to share with them
+          </p>
           <form onSubmit={handleInvite} className="flex gap-2 mt-2">
             <Input
               type="email"
@@ -192,10 +207,16 @@ export function HouseholdSection() {
               disabled={inviting}
             />
             <Button type="submit" size="sm" disabled={inviting || !inviteEmail.trim()}>
-              <Send className="h-4 w-4 mr-1" />
-              Invite
+              <Link className="h-4 w-4 mr-1" />
+              Create
             </Button>
           </form>
+          {justCreated && (
+            <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
+              <Check className="h-3 w-3" />
+              Invite link copied to clipboard — share it with them!
+            </p>
+          )}
         </div>
 
         {invites.length > 0 && (
@@ -214,13 +235,19 @@ export function HouseholdSection() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 w-8 p-0"
+                      className="h-8 px-2 gap-1"
                       onClick={() => handleCopyLink(invite.token)}
                     >
                       {copiedToken === invite.token ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <>
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                          <span className="text-xs text-green-500">Copied</span>
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span className="text-xs">Copy link</span>
+                        </>
                       )}
                     </Button>
                     {isOwner && (
