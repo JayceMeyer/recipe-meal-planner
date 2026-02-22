@@ -35,3 +35,23 @@ export async function scrapeRecipe(url: string): Promise<ScrapeResponse> {
 
   return response.json()
 }
+
+export async function parseRecipeText(
+  supabase: { functions: { invoke: (name: string, options: { body: unknown }) => Promise<{ data: ScrapeResponse | null; error: Error | null }> } },
+  householdId: string,
+  text: string,
+): Promise<ScrapeResponse> {
+  const { data, error } = await supabase.functions.invoke('parse-recipe-text', {
+    body: { householdId, text },
+  })
+
+  if (error) {
+    return { success: false, recipe: null, error: error.message }
+  }
+
+  if (!data) {
+    return { success: false, recipe: null, error: 'No response from server' }
+  }
+
+  return data
+}

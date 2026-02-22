@@ -4,13 +4,16 @@ import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
 import { useScrapeRecipe } from '@/hooks/useScrapeRecipe'
+import { useParseRecipeText } from '@/hooks/useParseRecipeText'
 import { useGroups } from '@/hooks/useGroups'
 import { supabase } from '@/lib/supabase'
 import { GroupSelector } from '@/components/GroupSelector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Ingredient, Step, RecipeInsert } from '@/types/database'
+import type { ScrapedRecipe } from '@/lib/api'
 
 function parseServings(yields: string | null): number | null {
   if (!yields) return null
@@ -93,8 +96,12 @@ function parseSteps(instructions: string[]): Step[] {
   }))
 }
 
+type ImportMode = 'url' | 'text'
+
 export function AddRecipe() {
+  const [mode, setMode] = useState<ImportMode>('url')
   const [url, setUrl] = useState('')
+  const [text, setText] = useState('')
   const [titleOverride, setTitleOverride] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -102,9 +109,14 @@ export function AddRecipe() {
 
   const { user } = useAuth()
   const { household } = useHousehold()
-  const { scrape, recipe, loading, error, reset } = useScrapeRecipe()
+  const { scrape, recipe: scrapeRecipe, loading: scrapeLoading, error: scrapeError, reset: scrapeReset } = useScrapeRecipe()
+  const { parse, recipe: parseRecipe, loading: parseLoading, error: parseError, reset: parseReset } = useParseRecipeText()
   const { groups, createGroup } = useGroups()
   const navigate = useNavigate()
+
+  const recipe: ScrapedRecipe | null = mode === 'url' ? scrapeRecipe : parseRecipe
+  const loading = mode === 'url' ? scrapeLoading : parseLoading
+  const error = mode === 'url' ? scrapeError : parseError
 
   const effectiveTitle = titleOverride ?? recipe?.title ?? ''
 
@@ -112,6 +124,12 @@ export function AddRecipe() {
     e.preventDefault()
     setSaveError(null)
     await scrape(url)
+  }
+
+  const handleParse = async (e: FormEvent) => {
+    e.preventDefault()
+    setSaveError(null)
+    await parse(text)
   }
 
   const handleSave = async () => {
@@ -125,7 +143,7 @@ export function AddRecipe() {
       household_id: household.id,
       title: effectiveTitle || recipe.title,
       image_url: recipe.image,
-      source_url: url,
+      source_url: mode === 'url' ? url : null,
       servings: parseServings(recipe.yields),
       cook_time: recipe.total_time,
       ingredients: parseIngredients(recipe.ingredients),
@@ -155,58 +173,128 @@ export function AddRecipe() {
 
   const handleReset = () => {
     setUrl('')
+    setText('')
     setTitleOverride(null)
     setSaveError(null)
     setSelectedGroupIds([])
-    reset()
+    scrapeReset()
+    parseReset()
+  }
+
+  const handleModeSwitch = (newMode: ImportMode) => {
+    if (newMode === mode) return
+    handleReset()
+    setMode(newMode)
   }
 
   return (
     <div className="container max-w-2xl py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Add Recipe from URL</CardTitle>
+          <CardTitle>Add Recipe</CardTitle>
           <CardDescription>
-            Paste a recipe URL and we'll import it for you
+            Import a recipe from a URL or paste recipe text
           </CardDescription>
+          <div className="flex gap-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('url')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === 'url'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              From URL
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('text')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                mode === 'text'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              From Text
+            </button>
+          </div>
         </CardHeader>
 
         {!recipe ? (
-          <form onSubmit={handleScrape} className="flex flex-col gap-6">
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <label htmlFor="url" className="text-sm font-medium">
-                  Recipe URL
-                </label>
-                <Input
-                  id="url"
-                  type="url"
-                  placeholder="https://example.com/recipe"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={loading || !url}>
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Importing...
-                  </>
-                ) : (
-                  'Import Recipe'
+          mode === 'url' ? (
+            <form onSubmit={handleScrape} className="flex flex-col gap-6">
+              <CardContent className="space-y-4">
+                {error && (
+                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                    {error}
+                  </div>
                 )}
-              </Button>
-            </CardFooter>
-          </form>
+                <div className="space-y-2">
+                  <label htmlFor="url" className="text-sm font-medium">
+                    Recipe URL
+                  </label>
+                  <Input
+                    id="url"
+                    type="url"
+                    placeholder="https://example.com/recipe"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={loading || !url}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    'Import Recipe'
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+          ) : (
+            <form onSubmit={handleParse} className="flex flex-col gap-6">
+              <CardContent className="space-y-4">
+                {error && (
+                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <label htmlFor="recipe-text" className="text-sm font-medium">
+                    Recipe Text
+                  </label>
+                  <Textarea
+                    id="recipe-text"
+                    placeholder="Paste your recipe text here — from Instagram captions, messages, blog posts, etc."
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    required
+                    disabled={loading}
+                    rows={8}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={loading || !text.trim()}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Parsing...
+                    </>
+                  ) : (
+                    'Parse Recipe'
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+          )
         ) : (
           <>
             <CardContent className="space-y-6">
