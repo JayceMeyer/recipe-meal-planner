@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
+import { toLocalDateString } from '@/lib/utils'
 import type { MealPlan, MealPlanEntry, MealType } from '@/types/database'
 
 export interface MealPlanWithEntries extends MealPlan {
@@ -29,7 +30,7 @@ function getWeekStart(date: Date): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().split('T')[0]
+  return toLocalDateString(d)
 }
 
 export function useMealPlan(weekStart?: string): UseMealPlanResult {

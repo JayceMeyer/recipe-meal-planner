@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { CalendarDays, Check, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useMealPlan } from '@/hooks/useMealPlan'
+import { toLocalDateString } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,7 +25,7 @@ function getWeekStart(date: Date): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().split('T')[0]
+  return toLocalDateString(d)
 }
 
 function getUpcomingDates(): { value: string; label: string }[] {
@@ -33,7 +34,7 @@ function getUpcomingDates(): { value: string; label: string }[] {
   for (let i = 0; i < 14; i++) {
     const d = new Date(today)
     d.setDate(today.getDate() + i)
-    const value = d.toISOString().split('T')[0]
+    const value = toLocalDateString(d)
     const label =
       i === 0
         ? 'Today'

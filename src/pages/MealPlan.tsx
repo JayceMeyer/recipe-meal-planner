@@ -20,6 +20,7 @@ import { MealSlotMenu } from '@/components/meal-plan/MealSlotMenu'
 import { useAIMealPlan } from '@/hooks/useAIMealPlan'
 import { GenerateGroceryList } from '@/components/GenerateGroceryList'
 import { Button } from '@/components/ui/button'
+import { toLocalDateString } from '@/lib/utils'
 import type { MealType, Recipe } from '@/types/database'
 import type { ExistingMealSlot, PlannedMeal } from '@/types/aiMealPlan'
 
@@ -37,7 +38,7 @@ function getWeekStart(date: Date): string {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1)
   d.setDate(diff)
-  return d.toISOString().split('T')[0]
+  return toLocalDateString(d)
 }
 
 function getWeekDates(weekStart: string): string[] {
@@ -46,7 +47,7 @@ function getWeekDates(weekStart: string): string[] {
   for (let i = 0; i < 7; i++) {
     const d = new Date(start)
     d.setDate(start.getDate() + i)
-    dates.push(d.toISOString().split('T')[0])
+    dates.push(toLocalDateString(d))
   }
   return dates
 }
@@ -105,7 +106,7 @@ export function MealPlan() {
     (direction: number) => {
       const d = new Date(weekStart + 'T00:00:00')
       d.setDate(d.getDate() + direction * 7)
-      setWeekStart(d.toISOString().split('T')[0])
+      setWeekStart(toLocalDateString(d))
     },
     [weekStart]
   )

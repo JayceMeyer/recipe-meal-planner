@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CalendarDays, UtensilsCrossed } from 'lucide-react'
 import { useMealPlan } from '@/hooks/useMealPlan'
 import { useRecipes } from '@/hooks/useRecipes'
+import { toLocalDateString } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { MealType, Recipe } from '@/types/database'
 
@@ -16,7 +17,7 @@ const MEAL_LABELS: Record<MealType, string> = {
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 function getToday(): string {
-  return new Date().toISOString().split('T')[0]
+  return toLocalDateString(new Date())
 }
 
 export function TodaysMeals() {
