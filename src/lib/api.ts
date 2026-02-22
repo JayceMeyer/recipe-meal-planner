@@ -37,7 +37,7 @@ export async function scrapeRecipe(url: string): Promise<ScrapeResponse> {
 }
 
 export async function parseRecipeText(
-  supabase: { functions: { invoke: (name: string, options: { body: unknown }) => Promise<{ data: ScrapeResponse | null; error: Error | null }> } },
+  supabase: { functions: { invoke: (name: string, options: { body: Record<string, string> }) => Promise<{ data: ScrapeResponse | null; error: Error | null }> } },
   householdId: string,
   text: string,
 ): Promise<ScrapeResponse> {
