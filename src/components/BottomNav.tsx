@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { Home, BookOpen, ShoppingCart, User, Package, CalendarDays } from 'lucide-react'
+import { Home, BookOpen, ShoppingCart, User, Package, CalendarDays, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useUserRole } from '@/hooks/useUserRole'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
@@ -12,10 +13,16 @@ const navItems = [
 ]
 
 export function BottomNav() {
+  const { isAdminOrModerator } = useUserRole()
+
+  const items = isAdminOrModerator
+    ? [...navItems, { to: '/admin', icon: Shield, label: 'Admin' }]
+    : navItems
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
       <div className="flex items-center justify-around h-16">
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {items.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

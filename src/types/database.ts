@@ -514,6 +514,65 @@ export interface Database {
           }
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: 'admin' | 'moderator' | 'user'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role?: 'admin' | 'moderator' | 'user'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: 'admin' | 'moderator' | 'user'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_roles_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      app_settings: {
+        Row: {
+          id: number
+          ai_markup_percent: number
+          updated_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          ai_markup_percent?: number
+          updated_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          ai_markup_percent?: number
+          updated_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'app_settings_updated_by_fkey'
+            columns: ['updated_by']
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       pantry_items: {
         Row: {
           id: string
@@ -568,10 +627,21 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<string, never>
+        Returns: 'admin' | 'moderator' | 'user'
+      }
+      is_admin: {
+        Args: Record<string, never>
+        Returns: boolean
+      }
+      is_admin_or_moderator: {
+        Args: Record<string, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: 'admin' | 'moderator' | 'user'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -636,3 +706,7 @@ export type ColorTheme = 'kitchen' | 'midnight' | 'creamsicle' | 'coffee' | 'tik
 export type UserPreferences = Tables<'user_preferences'>
 export type UserPreferencesInsert = TablesInsert<'user_preferences'>
 export type UserPreferencesUpdate = TablesUpdate<'user_preferences'>
+
+export type AppRole = 'admin' | 'moderator' | 'user'
+export type UserRole = Tables<'user_roles'>
+export type AppSettings = Tables<'app_settings'>

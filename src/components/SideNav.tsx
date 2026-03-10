@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { Home, BookOpen, ShoppingCart, User, Package, Sparkles, CalendarDays } from 'lucide-react'
+import { Home, BookOpen, ShoppingCart, User, Package, Sparkles, CalendarDays, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useUserRole } from '@/hooks/useUserRole'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
@@ -13,6 +14,8 @@ const navItems = [
 ]
 
 export function SideNav() {
+  const { isAdminOrModerator } = useUserRole()
+
   return (
     <aside className="hidden md:flex w-64 flex-col border-r bg-background">
       <nav className="flex flex-col gap-1 p-4">
@@ -31,6 +34,23 @@ export function SideNav() {
             <span>{label}</span>
           </NavLink>
         ))}
+        {isAdminOrModerator && (
+          <>
+            <div className="my-2 border-t" />
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                  isActive && 'bg-accent text-accent-foreground'
+                )
+              }
+            >
+              <Shield className="h-5 w-5" />
+              <span>Admin</span>
+            </NavLink>
+          </>
+        )}
       </nav>
     </aside>
   )

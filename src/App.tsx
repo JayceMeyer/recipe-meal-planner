@@ -3,7 +3,9 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { HouseholdProvider } from '@/contexts/HouseholdContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AdminRoute } from '@/components/AdminRoute'
 import { Layout } from '@/components/Layout'
+import { AdminLayout } from '@/components/AdminLayout'
 import { Login } from '@/pages/Login'
 import { Signup } from '@/pages/Signup'
 import { Home } from '@/pages/Home'
@@ -19,6 +21,9 @@ import { Pantry } from '@/pages/Pantry'
 import { Discover } from '@/pages/Discover'
 import { MealPlan } from '@/pages/MealPlan'
 import { JoinHousehold } from '@/pages/JoinHousehold'
+import { AdminOverview } from '@/pages/admin/Overview'
+import { AdminUsersPage } from '@/pages/admin/UsersPage'
+import { AdminSettingsPage } from '@/pages/admin/SettingsPage'
 
 function App() {
   return (
@@ -50,6 +55,17 @@ function App() {
             <Route path="/discover" element={<Discover />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />
+            <Route
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route path="/admin" element={<AdminOverview />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/settings" element={<AdminSettingsPage />} />
+            </Route>
           </Route>
         </Routes>
         </ThemeProvider>
