@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Plus, X, Loader2, Package } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantryKits } from '@/hooks/usePantryKits'
+import { useCuisineSuggestions } from '@/hooks/useCuisineSuggestions'
 import { PantryKitSelector } from '@/components/PantryKitSelector'
 import { BulkSelectPanel } from '@/components/BulkSelectPanel'
+import { SmartSuggestions } from '@/components/SmartSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient } from '@/utils/ingredientCategories'
@@ -15,6 +17,7 @@ interface PantrySetupStepProps {
 export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   const { items, loading, error, addItem, addItems, deleteItem, refresh } = usePantryItems()
   const { kits, loading: kitsLoading, applyKit } = usePantryKits()
+  const { suggestions, loading: suggestionsLoading } = useCuisineSuggestions()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
 
@@ -60,6 +63,13 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
           Start with a kit, browse by category, or add items manually
         </p>
       </div>
+
+      <SmartSuggestions
+        suggestions={suggestions}
+        loading={suggestionsLoading}
+        existingNames={existingNames}
+        onAdd={handleBulkAdd}
+      />
 
       <PantryKitSelector
         kits={kits}

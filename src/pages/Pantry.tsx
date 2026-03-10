@@ -3,8 +3,10 @@ import { ChevronDown, ChevronRight, Loader2, Plus, Package, Search, Save } from 
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
 import { usePantryKits } from '@/hooks/usePantryKits'
+import { useCuisineSuggestions } from '@/hooks/useCuisineSuggestions'
 import { PantryItem } from '@/components/PantryItem'
 import { PantryKitSelector } from '@/components/PantryKitSelector'
+import { SmartSuggestions } from '@/components/SmartSuggestions'
 import { RecipeSuggestions } from '@/components/RecipeSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,9 +27,10 @@ interface GroupedItems {
 }
 
 export function Pantry() {
-  const { items, loading, error, addItem, updateItem, deleteItem, refresh } = usePantryItems()
+  const { items, loading, error, addItem, addItems, updateItem, deleteItem, refresh } = usePantryItems()
   const { canMake, almostMakeable, loading: suggestionsLoading } = usePantrySuggestions()
   const { kits, loading: kitsLoading, applyKit, saveAsKit } = usePantryKits()
+  const { suggestions, loading: cuisineSuggestionsLoading } = useCuisineSuggestions()
 
   const [newItemName, setNewItemName] = useState('')
   const [newItemCategory, setNewItemCategory] = useState('')
@@ -106,6 +109,10 @@ export function Pantry() {
       await refresh()
     }
     return result
+  }
+
+  const handleBulkAdd = async (names: string[]) => {
+    await addItems(names.map((name) => ({ ingredient_name: name })))
   }
 
   const handleSaveAsKit = async () => {
@@ -239,6 +246,17 @@ export function Pantry() {
               loading={kitsLoading}
               existingNames={existingNames}
               onApply={handleApplyKit}
+            />
+          </div>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="mb-6">
+            <SmartSuggestions
+              suggestions={suggestions}
+              loading={cuisineSuggestionsLoading}
+              existingNames={existingNames}
+              onAdd={handleBulkAdd}
             />
           </div>
         )}
