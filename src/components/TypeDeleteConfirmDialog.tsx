@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 
 interface TypeDeleteConfirmDialogProps {
   open: boolean
@@ -19,6 +19,7 @@ interface TypeDeleteConfirmDialogProps {
   itemCount: number
   onConfirm: () => Promise<void>
   loading: boolean
+  error?: string | null
 }
 
 export function TypeDeleteConfirmDialog({
@@ -29,6 +30,7 @@ export function TypeDeleteConfirmDialog({
   itemCount,
   onConfirm,
   loading,
+  error,
 }: TypeDeleteConfirmDialogProps) {
   const [confirmText, setConfirmText] = useState('')
   const isConfirmed = confirmText === 'DELETE'
@@ -71,6 +73,13 @@ export function TypeDeleteConfirmDialog({
             />
           </div>
         </div>
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>

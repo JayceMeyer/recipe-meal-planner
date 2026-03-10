@@ -9,8 +9,8 @@ import { AlertTriangle, Trash2, CheckCircle2 } from 'lucide-react'
 
 export function DataManagementSection() {
   const { isOwner } = useHousehold()
-  const { items: pantryItems, deleteAllItems } = usePantryItems()
-  const { lists: groceryLists, deleteAllLists } = useGroceryLists()
+  const { items: pantryItems, deleteAllItems, error: pantryError } = usePantryItems()
+  const { lists: groceryLists, deleteAllLists, error: groceryError } = useGroceryLists()
 
   const [pantryDialogOpen, setPantryDialogOpen] = useState(false)
   const [groceryDialogOpen, setGroceryDialogOpen] = useState(false)
@@ -110,6 +110,7 @@ export function DataManagementSection() {
         itemCount={pantryItems.length}
         onConfirm={handleDeletePantry}
         loading={pantryDeleting}
+        error={pantryError}
       />
 
       <TypeDeleteConfirmDialog
@@ -120,6 +121,7 @@ export function DataManagementSection() {
         itemCount={groceryLists.length}
         onConfirm={handleDeleteGrocery}
         loading={groceryDeleting}
+        error={groceryError}
       />
     </>
   )
