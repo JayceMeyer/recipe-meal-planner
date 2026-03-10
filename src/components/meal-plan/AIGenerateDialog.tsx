@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAIMealPlan } from '@/hooks/useAIMealPlan'
-import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { useCredits } from '@/hooks/useCredits'
+import { InsufficientCreditsAlert } from '@/components/InsufficientCreditsAlert'
 import type { MealType } from '@/types/database'
 import type { AIMealPlanConfig, ExistingMealSlot, PlannedMeal } from '@/types/aiMealPlan'
 import { cn } from '@/lib/utils'
@@ -41,8 +42,9 @@ export function AIGenerateDialog({
   onMealsGenerated,
 }: AIGenerateDialogProps) {
   const { generating, progress, error, generatePlan } = useAIMealPlan()
-  const { preferences } = useUserPreferences()
-  const hasOpenRouterKey = !!preferences?.openrouter_api_key
+  const { balance, isByok } = useCredits()
+  const hasAiAccess = isByok || (balance !== null && balance > 0)
+  const insufficientCredits = error === 'insufficient_credits'
 
   const [selectedDays, setSelectedDays] = useState<Set<number>>(() => new Set([0, 1, 2, 3, 4, 5, 6]))
   const [selectedMealTypes, setSelectedMealTypes] = useState<Set<MealType>>(
@@ -96,7 +98,7 @@ export function AIGenerateDialog({
 
   const totalSlots = selectedDates.length * selectedMealTypes.size
 
-  if (!hasOpenRouterKey) {
+  if (!hasAiAccess) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
@@ -106,7 +108,7 @@ export function AIGenerateDialog({
               AI Meal Planning
             </DialogTitle>
             <DialogDescription>
-              Add an OpenRouter API key in your Profile settings to enable AI meal plan generation.
+              Purchase AI credits or add an OpenRouter API key in your Profile settings to enable AI meal plan generation.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -196,7 +198,9 @@ export function AIGenerateDialog({
             </div>
           )}
 
-          {error && (
+          {insufficientCredits ? (
+            <InsufficientCreditsAlert />
+          ) : error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
         </div>

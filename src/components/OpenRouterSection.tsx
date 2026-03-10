@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Bot, Eye, EyeOff, Loader2, ExternalLink, Trash2 } from 'lucide-react'
+import { Bot, Eye, EyeOff, Loader2, ExternalLink, Trash2, Coins, Key } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { useCredits } from '@/hooks/useCredits'
 import { OPENROUTER_MODELS, DEFAULT_MODEL } from '@/types/aiMealPlan'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +15,7 @@ function maskKey(key: string): string {
 
 export function OpenRouterSection() {
   const { preferences, updateOpenRouterKey, updateOpenRouterModel } = useUserPreferences()
+  const { balance, isByok } = useCredits()
   const currentKey = preferences?.openrouter_api_key ?? null
   const currentModel = preferences?.openrouter_model ?? DEFAULT_MODEL
 
@@ -89,22 +91,70 @@ export function OpenRouterSection() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="size-5" />
-          AI Meal Planning (OpenRouter)
+          AI Settings
         </CardTitle>
         <CardDescription>
-          Powers AI-generated meal plans. Get an API key at{' '}
-          <a
-            href="https://openrouter.ai/keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-primary hover:underline"
-          >
-            openrouter.ai
-            <ExternalLink className="size-3" />
-          </a>
+          Powers AI-generated meal plans and recipe parsing
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center gap-2 rounded-lg bg-muted p-3">
+          {isByok ? (
+            <>
+              <Key className="size-4 text-primary" />
+              <span className="text-sm font-medium">Using your own API key</span>
+              <span className="text-xs text-muted-foreground">(no credits used)</span>
+            </>
+          ) : (
+            <>
+              <Coins className="size-4 text-primary" />
+              <span className="text-sm font-medium">Using app credits</span>
+              {balance !== null && (
+                <span className="text-xs text-muted-foreground">({balance} remaining)</span>
+              )}
+            </>
+          )}
+        </div>
+
+        <div>
+          <p className="text-sm font-medium mb-2">AI Model</p>
+          <div className="flex flex-wrap gap-2">
+            {OPENROUTER_MODELS.map((model) => (
+              <button
+                key={model.id}
+                type="button"
+                onClick={() => handleModelChange(model.id)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                  currentModel === model.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                )}
+                title={model.description}
+              >
+                {model.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t pt-4">
+          <p className="text-sm font-medium mb-1">Own API Key (optional)</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Bring your own{' '}
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 text-primary hover:underline"
+            >
+              OpenRouter key
+              <ExternalLink className="size-3" />
+            </a>
+            {' '}to skip credit usage
+          </p>
+        </div>
+
         {currentKey && (
           <div className="flex items-center gap-2">
             <div className="flex-1 font-mono text-sm bg-muted px-3 py-2 rounded-md">
@@ -143,30 +193,6 @@ export function OpenRouterSection() {
             {saving ? <Loader2 className="size-4 animate-spin" /> : 'Save'}
           </Button>
         </div>
-
-        {currentKey && (
-          <div>
-            <p className="text-sm font-medium mb-2">AI Model</p>
-            <div className="flex flex-wrap gap-2">
-              {OPENROUTER_MODELS.map((model) => (
-                <button
-                  key={model.id}
-                  type="button"
-                  onClick={() => handleModelChange(model.id)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    currentModel === model.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80',
-                  )}
-                  title={model.description}
-                >
-                  {model.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {error && (
           <p className="text-sm text-destructive">{error}</p>

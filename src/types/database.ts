@@ -573,6 +573,96 @@ export interface Database {
           }
         ]
       }
+      household_credits: {
+        Row: {
+          household_id: string
+          balance: number
+          updated_at: string
+        }
+        Insert: {
+          household_id: string
+          balance?: number
+          updated_at?: string
+        }
+        Update: {
+          household_id?: string
+          balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'household_credits_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      credit_transactions: {
+        Row: {
+          id: string
+          household_id: string
+          type: 'purchase' | 'usage' | 'bonus' | 'refund'
+          amount: number
+          balance_after: number
+          description: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          type: 'purchase' | 'usage' | 'bonus' | 'refund'
+          amount: number
+          balance_after: number
+          description?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          type?: 'purchase' | 'usage' | 'bonus' | 'refund'
+          amount?: number
+          balance_after?: number
+          description?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'credit_transactions_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      stripe_customers: {
+        Row: {
+          household_id: string
+          stripe_customer_id: string
+          created_at: string
+        }
+        Insert: {
+          household_id: string
+          stripe_customer_id: string
+          created_at?: string
+        }
+        Update: {
+          household_id?: string
+          stripe_customer_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'stripe_customers_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       pantry_items: {
         Row: {
           id: string
@@ -639,9 +729,28 @@ export interface Database {
         Args: Record<string, never>
         Returns: boolean
       }
+      deduct_credits: {
+        Args: {
+          p_household_id: string
+          p_amount: number
+          p_description?: string
+          p_metadata?: Json
+        }
+        Returns: number
+      }
+      add_credits: {
+        Args: {
+          p_household_id: string
+          p_amount: number
+          p_description?: string
+          p_metadata?: Json
+        }
+        Returns: number
+      }
     }
     Enums: {
       app_role: 'admin' | 'moderator' | 'user'
+      credit_transaction_type: 'purchase' | 'usage' | 'bonus' | 'refund'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -710,3 +819,8 @@ export type UserPreferencesUpdate = TablesUpdate<'user_preferences'>
 export type AppRole = 'admin' | 'moderator' | 'user'
 export type UserRole = Tables<'user_roles'>
 export type AppSettings = Tables<'app_settings'>
+
+export type CreditTransactionType = 'purchase' | 'usage' | 'bonus' | 'refund'
+export type HouseholdCredits = Tables<'household_credits'>
+export type CreditTransaction = Tables<'credit_transactions'>
+export type StripeCustomer = Tables<'stripe_customers'>

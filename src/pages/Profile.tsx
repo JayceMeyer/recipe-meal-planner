@@ -1,12 +1,17 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { useCredits } from '@/hooks/useCredits'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { HouseholdSection } from '@/components/HouseholdSection'
 import { ApiKeySection } from '@/components/ApiKeySection'
 import { OpenRouterSection } from '@/components/OpenRouterSection'
 import { ThemePicker } from '@/components/ThemePicker'
+import { PurchaseCreditsDialog } from '@/components/PurchaseCreditsDialog'
+import { TransactionHistory } from '@/components/TransactionHistory'
+import { Coins, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const CUISINE_OPTIONS = [
@@ -22,9 +27,32 @@ const DIETARY_OPTIONS = [
 export function Profile() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { preferences, updatePreferences, resetSetup } = useUserPreferences()
+  const { balance, isByok, refresh: refreshCredits } = useCredits()
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false)
+  const purchaseHandled = useRef(false)
   const cuisines = preferences?.cuisine_preferences ?? []
   const dietary = preferences?.dietary_restrictions ?? []
+
+  useEffect(() => {
+    if (purchaseHandled.current) return
+    const purchase = searchParams.get('purchase')
+    if (purchase === 'success') {
+      purchaseHandled.current = true
+      queueMicrotask(() => {
+        setPurchaseSuccess(true)
+        refreshCredits()
+        setSearchParams({}, { replace: true })
+      })
+      const timer = setTimeout(() => setPurchaseSuccess(false), 5000)
+      return () => clearTimeout(timer)
+    }
+    if (purchase === 'cancel') {
+      purchaseHandled.current = true
+      queueMicrotask(() => { setSearchParams({}, { replace: true }) })
+    }
+  }, [searchParams, setSearchParams, refreshCredits])
 
   const toggleCuisine = (cuisine: string) => {
     const next = cuisines.includes(cuisine)
@@ -73,6 +101,37 @@ export function Profile() {
       <ApiKeySection />
 
       <OpenRouterSection />
+
+      {!isByok && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5" />
+              AI Credits
+            </CardTitle>
+            <CardDescription>
+              Credits are used for AI meal planning and recipe parsing
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {purchaseSuccess && (
+              <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Credits purchased successfully!
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold">{balance ?? 0}</p>
+                <p className="text-sm text-muted-foreground">credits remaining</p>
+              </div>
+              <PurchaseCreditsDialog />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isByok && <TransactionHistory />}
 
       <Card>
         <CardHeader>

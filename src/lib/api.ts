@@ -37,15 +37,24 @@ export async function scrapeRecipe(url: string): Promise<ScrapeResponse> {
 }
 
 export async function parseRecipeText(
-  supabase: { functions: { invoke: (name: string, options: { body: Record<string, string> }) => Promise<{ data: ScrapeResponse | null; error: Error | null }> } },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: { functions: { invoke: (name: string, options: { body: Record<string, string> }) => Promise<{ data: any; error: Error | null; response?: Response }> } },
   householdId: string,
   text: string,
 ): Promise<ScrapeResponse> {
-  const { data, error } = await supabase.functions.invoke('parse-recipe-text', {
+  const { data, error, response } = await supabase.functions.invoke('parse-recipe-text', {
     body: { householdId, text },
   })
 
   if (error) {
+    if (response) {
+      try {
+        const body = await response.json()
+        if (body?.error) return { success: false, recipe: null, error: body.error }
+      } catch {
+        // ignore parse errors
+      }
+    }
     return { success: false, recipe: null, error: error.message }
   }
 
