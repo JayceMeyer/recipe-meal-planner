@@ -83,7 +83,7 @@ export function useRecipe(id: string | undefined): UseRecipeResult {
       .from('recipes')
       .update({ source: null })
       .eq('id', id)
-      .select()
+      .select('*, cookbooks(title)')
       .single()
 
     if (updateError) {
@@ -91,7 +91,7 @@ export function useRecipe(id: string | undefined): UseRecipeResult {
       return false
     }
 
-    setRecipe(data)
+    setRecipe(data as RecipeWithCookbook)
     return true
   }
 

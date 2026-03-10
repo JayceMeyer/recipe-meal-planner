@@ -56,39 +56,14 @@ export function useCookbooks(): UseCookbooksResult {
     isMounted.current = true
 
     const doFetch = async () => {
-      if (!household) {
-        setCookbooks([])
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-
-      const { data, error: fetchError } = await supabase
-        .from('cookbooks')
-        .select('*')
-        .eq('household_id', household.id)
-        .order('created_at', { ascending: false })
-
-      if (!isMounted.current) return
-
-      if (fetchError) {
-        setError(fetchError.message)
-        setCookbooks([])
-      } else {
-        setCookbooks(data ?? [])
-      }
-
-      setLoading(false)
+      await fetchCookbooks()
     }
-
     doFetch()
 
     return () => {
       isMounted.current = false
     }
-  }, [household])
+  }, [fetchCookbooks])
 
   const addCookbook = useCallback(
     async (data: {

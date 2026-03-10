@@ -17,6 +17,16 @@ import {
 export function Cookbooks() {
   const { cookbooks, loading, deleteCookbook, addCookbook } = useCookbooks()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    await deleteCookbook(deleteTarget.id)
+    setDeleting(false)
+    setDeleteTarget(null)
+  }
 
   if (loading) {
     return (
@@ -78,7 +88,7 @@ export function Cookbooks() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => deleteCookbook(cookbook.id)}
+                  onClick={() => setDeleteTarget({ id: cookbook.id, title: cookbook.title })}
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -93,6 +103,33 @@ export function Cookbooks() {
         onOpenChange={setDialogOpen}
         onAdded={addCookbook}
       />
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Cookbook</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.title}&quot;? Recipes linked to this
+              cookbook will keep their data but lose the cookbook reference.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Camera, Loader2, Upload } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
@@ -67,6 +67,7 @@ function parseIngredientString(raw: string): Ingredient {
     remaining = remaining.slice(amountMatch[0].length).trim()
   }
 
+  // Remove parenthetical sizes like "(14 ounce)" before unit matching
   remaining = remaining.replace(/\(\d+[\s.]*(?:ounce|oz|gram|g|ml|liter|l)\)\s*/i, '').trim()
 
   if (amount) {
@@ -391,7 +392,9 @@ export function AddRecipe() {
           ) : (
             <div className="flex flex-col gap-6">
               <CardContent className="space-y-4">
-                {error && (
+                {error === 'insufficient_credits' ? (
+                  <InsufficientCreditsAlert />
+                ) : error && (
                   <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                     {error}
                   </div>
@@ -419,7 +422,7 @@ export function AddRecipe() {
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       No cookbooks yet.{' '}
-                      <a href="/cookbooks" className="text-primary underline">Add one first</a>.
+                      <Link to="/cookbooks" className="text-primary underline">Add one first</Link>.
                     </p>
                   )}
                 </div>
