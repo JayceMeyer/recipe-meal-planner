@@ -17,11 +17,14 @@ export function PantryKitSelector({ kits, loading, existingNames, onApply }: Pan
 
   const handleApply = async (kitId: string) => {
     setApplyingKit(kitId)
-    const result = await onApply(kitId)
-    if (result) {
-      setAppliedKits((prev) => new Map(prev).set(kitId, result))
+    try {
+      const result = await onApply(kitId)
+      if (result) {
+        setAppliedKits((prev) => new Map(prev).set(kitId, result))
+      }
+    } finally {
+      setApplyingKit(null)
     }
-    setApplyingKit(null)
   }
 
   if (loading) {

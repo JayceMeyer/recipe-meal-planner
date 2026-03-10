@@ -10,25 +10,34 @@ const SEAFOOD_INGREDIENTS = ['fish', 'salmon', 'tuna', 'shrimp', 'crab', 'lobste
 const GLUTEN_INGREDIENTS = ['flour', 'bread', 'pasta', 'noodle', 'spaghetti', 'penne', 'macaroni', 'couscous', 'barley', 'orzo', 'pita', 'naan', 'tortilla', 'cracker', 'breadcrumb', 'panko', 'croissant', 'bagel', 'baguette', 'phyllo', 'pumpernickel']
 const NUT_INGREDIENTS = ['almond', 'walnut', 'pecan', 'cashew', 'peanut', 'pistachio', 'pine nut', 'peanut butter']
 
+function containsWord(text: string, word: string): boolean {
+  const regex = new RegExp(`(^|\\s|-)${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(s?)(\\s|-|$)`, 'i')
+  return regex.test(text)
+}
+
+function matchesAny(text: string, words: string[]): boolean {
+  return words.some((w) => containsWord(text, w))
+}
+
 function matchesDietaryFilter(ingredientName: string, restrictions: string[]): boolean {
   const lower = ingredientName.toLowerCase()
   for (const restriction of restrictions) {
     switch (restriction) {
       case 'Vegetarian':
-        if (MEAT_INGREDIENTS.some((m) => lower.includes(m)) || SEAFOOD_INGREDIENTS.some((s) => lower.includes(s))) return false
+        if (matchesAny(lower, MEAT_INGREDIENTS) || matchesAny(lower, SEAFOOD_INGREDIENTS)) return false
         break
       case 'Vegan':
-        if (MEAT_INGREDIENTS.some((m) => lower.includes(m)) || SEAFOOD_INGREDIENTS.some((s) => lower.includes(s)) || DAIRY_INGREDIENTS.some((d) => lower.includes(d))) return false
-        if (lower.includes('egg') || lower.includes('honey')) return false
+        if (matchesAny(lower, MEAT_INGREDIENTS) || matchesAny(lower, SEAFOOD_INGREDIENTS) || matchesAny(lower, DAIRY_INGREDIENTS)) return false
+        if (containsWord(lower, 'egg') || containsWord(lower, 'honey')) return false
         break
       case 'Dairy-Free':
-        if (DAIRY_INGREDIENTS.some((d) => lower.includes(d))) return false
+        if (matchesAny(lower, DAIRY_INGREDIENTS)) return false
         break
       case 'Gluten-Free':
-        if (GLUTEN_INGREDIENTS.some((g) => lower.includes(g))) return false
+        if (matchesAny(lower, GLUTEN_INGREDIENTS)) return false
         break
       case 'Nut-Free':
-        if (NUT_INGREDIENTS.some((n) => lower.includes(n))) return false
+        if (matchesAny(lower, NUT_INGREDIENTS)) return false
         break
     }
   }

@@ -66,9 +66,15 @@ export function PantryScanModal({ open, onOpenChange, existingNames, onImport }:
         return
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('pantry-scans')
-        .getPublicUrl(fileName)
+        .createSignedUrl(fileName, 300)
+
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        setError(signedUrlError?.message || 'Failed to create signed URL')
+        setUploading(false)
+        return
+      }
 
       setUploading(false)
       setScanning(true)
@@ -76,7 +82,7 @@ export function PantryScanModal({ open, onOpenChange, existingNames, onImport }:
       const { data, error: invokeError } = await supabase.functions.invoke('scan-pantry-image', {
         body: {
           householdId: household.id,
-          imageUrl: urlData.publicUrl,
+          imageUrl: signedUrlData.signedUrl,
           mode: scanMode,
         },
       })
@@ -135,6 +141,7 @@ export function PantryScanModal({ open, onOpenChange, existingNames, onImport }:
   const handleClose = () => {
     onOpenChange(false)
     setParsedItems(null)
+    if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     setError(null)
   }

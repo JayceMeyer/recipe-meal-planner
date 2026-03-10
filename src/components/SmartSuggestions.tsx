@@ -47,14 +47,17 @@ export function SmartSuggestions({ suggestions, loading, existingNames, onAdd }:
   const handleAdd = async () => {
     if (selected.size === 0) return
     setAdding(true)
-    await onAdd([...selected])
-    setAddedNames((prev) => {
-      const next = new Set(prev)
-      for (const name of selected) next.add(name.toLowerCase())
-      return next
-    })
-    setSelected(new Set())
-    setAdding(false)
+    try {
+      await onAdd([...selected])
+      setAddedNames((prev) => {
+        const next = new Set(prev)
+        for (const name of selected) next.add(name.toLowerCase())
+        return next
+      })
+      setSelected(new Set())
+    } finally {
+      setAdding(false)
+    }
   }
 
   const cuisines = [...new Set(available.map((s) => s.cuisine))]

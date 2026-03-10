@@ -97,9 +97,12 @@ export function BulkSelectPanel({ existingNames, onAdd }: BulkSelectPanelProps) 
   const handleAdd = async () => {
     if (selected.size === 0) return
     setAdding(true)
-    await onAdd([...selected])
-    setSelected(new Set())
-    setAdding(false)
+    try {
+      await onAdd([...selected])
+      setSelected(new Set())
+    } finally {
+      setAdding(false)
+    }
   }
 
   const totalAvailable = groups.reduce((sum, g) => sum + g.items.length, 0)

@@ -10,7 +10,7 @@ interface UsePantryItemsResult {
   loading: boolean
   error: string | null
   addItem: (ingredientName: string, quantity?: string, unit?: string, category?: string) => Promise<PantryItem | null>
-  updateItem: (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }) => Promise<boolean>
+  updateItem: (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string; is_staple?: boolean; staple_threshold?: string; staple_unit?: string }) => Promise<boolean>
   deleteItem: (id: string) => Promise<boolean>
   addItems: (items: { ingredient_name: string; quantity?: string; unit?: string }[]) => Promise<boolean>
   refresh: () => Promise<void>
