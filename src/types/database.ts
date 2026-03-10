@@ -897,6 +897,7 @@ export interface Database {
           p_amount: number
           p_description?: string
           p_metadata?: Json
+          p_type?: 'purchase' | 'usage' | 'bonus' | 'refund'
         }
         Returns: number
       }
@@ -906,6 +907,7 @@ export interface Database {
           p_amount: number
           p_description?: string
           p_metadata?: Json
+          p_type?: 'purchase' | 'usage' | 'bonus' | 'refund'
         }
         Returns: number
       }

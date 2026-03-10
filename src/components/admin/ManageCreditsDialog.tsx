@@ -33,6 +33,7 @@ export function ManageCreditsDialog({
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -66,19 +67,28 @@ export function ManageCreditsDialog({
     if (isNaN(numAmount) || numAmount <= 0) return
 
     setSaving(true)
+    setError(null)
     const rpcName = action === 'add' ? 'add_credits' : 'deduct_credits'
     const txType = action === 'add' ? 'bonus' : 'refund'
 
-    const { data, error } = await supabase.rpc(rpcName, {
+    const { data, error: rpcError } = await supabase.rpc(rpcName, {
       p_household_id: householdId,
       p_amount: numAmount,
       p_description: description || `Admin ${action}: ${numAmount} credits`,
-      p_metadata: { admin_action: true, type: txType },
+      p_metadata: { admin_action: true },
+      p_type: txType,
     })
 
-    if (!error && data != null) {
+    if (rpcError) {
+      setError(rpcError.message)
+      setSaving(false)
+      return
+    }
+
+    if (data != null) {
       const newBalance = data as number
       if (newBalance === -1) {
+        setError('Insufficient balance for this deduction.')
         setSaving(false)
         return
       }
@@ -148,6 +158,10 @@ export function ManageCreditsDialog({
               Deduct Credits
             </Button>
           </div>
+
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
 
           <div className="border-t pt-3">
             <h4 className="text-sm font-medium mb-2">Recent Transactions</h4>

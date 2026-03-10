@@ -30,7 +30,63 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- 3. Create transfer_household_credits function
+-- 3. Add p_type parameter to add_credits for admin bonus/refund support
+create or replace function public.add_credits(
+  p_household_id uuid,
+  p_amount integer,
+  p_description text default null,
+  p_metadata jsonb default '{}'::jsonb,
+  p_type public.credit_transaction_type default 'purchase'
+)
+returns integer as $$
+declare
+  v_new_balance integer;
+begin
+  insert into public.household_credits (household_id, balance, updated_at)
+  values (p_household_id, p_amount, now())
+  on conflict (household_id)
+  do update set balance = household_credits.balance + p_amount,
+               updated_at = now()
+  returning balance into v_new_balance;
+
+  insert into public.credit_transactions (household_id, type, amount, balance_after, description, metadata)
+  values (p_household_id, p_type, p_amount, v_new_balance, p_description, p_metadata);
+
+  return v_new_balance;
+end;
+$$ language plpgsql security definer;
+
+-- 4. Add p_type parameter to deduct_credits for admin refund support
+create or replace function public.deduct_credits(
+  p_household_id uuid,
+  p_amount integer,
+  p_description text default null,
+  p_metadata jsonb default '{}'::jsonb,
+  p_type public.credit_transaction_type default 'usage'
+)
+returns integer as $$
+declare
+  v_new_balance integer;
+begin
+  update public.household_credits
+  set balance = balance - p_amount,
+      updated_at = now()
+  where household_id = p_household_id
+    and balance >= p_amount
+  returning balance into v_new_balance;
+
+  if v_new_balance is null then
+    return -1;
+  end if;
+
+  insert into public.credit_transactions (household_id, type, amount, balance_after, description, metadata)
+  values (p_household_id, p_type, -p_amount, v_new_balance, p_description, p_metadata);
+
+  return v_new_balance;
+end;
+$$ language plpgsql security definer;
+
+-- 5. Create transfer_household_credits function
 create or replace function public.transfer_household_credits(
   p_source_household uuid,
   p_target_household uuid
@@ -38,7 +94,6 @@ create or replace function public.transfer_household_credits(
 returns integer as $$
 declare
   v_source_balance integer;
-  v_new_source_balance integer;
   v_new_target_balance integer;
 begin
   select balance into v_source_balance
@@ -52,8 +107,7 @@ begin
 
   update public.household_credits
   set balance = 0, updated_at = now()
-  where household_id = p_source_household
-  returning balance into v_new_source_balance;
+  where household_id = p_source_household;
 
   insert into public.household_credits (household_id, balance, updated_at)
   values (p_target_household, v_source_balance, now())
