@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, FileText, Loader2, Pin, Plus, Package, Search, Save } from 'lucide-react'
+import { Camera, ChevronDown, ChevronRight, FileText, Loader2, Pin, Plus, Package, Search, Save } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
 import { usePantryKits } from '@/hooks/usePantryKits'
@@ -8,6 +8,7 @@ import { PantryItem } from '@/components/PantryItem'
 import { PantryKitSelector } from '@/components/PantryKitSelector'
 import { SmartSuggestions } from '@/components/SmartSuggestions'
 import { PantryTextImportModal } from '@/components/PantryTextImportModal'
+import { PantryScanModal } from '@/components/PantryScanModal'
 import { RecipeSuggestions } from '@/components/RecipeSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +42,7 @@ export function Pantry() {
   const [showStaplesOnly, setShowStaplesOnly] = useState(false)
   const [showKits, setShowKits] = useState(false)
   const [showTextImport, setShowTextImport] = useState(false)
+  const [showScanImport, setShowScanImport] = useState(false)
   const [showSaveKit, setShowSaveKit] = useState(false)
   const [saveKitName, setSaveKitName] = useState('')
   const [saveKitDesc, setSaveKitDesc] = useState('')
@@ -205,6 +207,14 @@ export function Pantry() {
               >
                 <FileText className="size-4" />
                 <span className="hidden sm:inline">Import</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowScanImport(true)}
+              >
+                <Camera className="size-4" />
+                <span className="hidden sm:inline">Scan</span>
               </Button>
               {items.length > 0 && (
                 <Button
@@ -399,6 +409,19 @@ export function Pantry() {
       <PantryTextImportModal
         open={showTextImport}
         onOpenChange={setShowTextImport}
+        existingNames={existingNames}
+        onImport={async (importItems) => {
+          await addItems(importItems.map((item) => ({
+            ingredient_name: item.ingredient_name,
+            quantity: item.quantity,
+            unit: item.unit,
+          })))
+        }}
+      />
+
+      <PantryScanModal
+        open={showScanImport}
+        onOpenChange={setShowScanImport}
         existingNames={existingNames}
         onImport={async (importItems) => {
           await addItems(importItems.map((item) => ({
