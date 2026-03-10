@@ -25,6 +25,35 @@ vi.mock('@/lib/supabase', () => ({
   },
 }))
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  HouseholdProvider: ({ children }: { children: React.ReactNode }) => children,
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
+}))
+
+vi.mock('@/hooks/useUserPreferences', () => ({
+  useUserPreferences: () => ({ preferences: { setup_completed: true }, loading: false }),
+}))
+
+vi.mock('@/hooks/useUserRole', () => ({
+  useUserRole: () => ({ role: 'user', isAdmin: false, isModerator: false, isAdminOrModerator: false, loading: false }),
+}))
+
+vi.mock('@/components/CreditBadge', () => ({
+  CreditBadge: () => null,
+}))
+
+vi.mock('@/components/dashboard/PantryQuickTool', () => ({
+  PantryQuickTool: () => null,
+}))
+
+vi.mock('@/components/dashboard/QuickAccessCards', () => ({
+  QuickAccessCards: () => null,
+}))
+
+vi.mock('@/components/TodaysMeals', () => ({
+  TodaysMeals: () => null,
+}))
+
 function TestApp({ initialEntries = ['/'] }: { initialEntries?: string[] }) {
   return (
     <MemoryRouter initialEntries={initialEntries}>

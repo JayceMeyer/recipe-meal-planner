@@ -5,6 +5,10 @@ import { MemoryRouter } from 'react-router-dom'
 import { AddRecipe } from './AddRecipe'
 import '@/test/mocks/supabase'
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
+}))
+
 const mockScrape = vi.fn()
 const mockReset = vi.fn()
 const mockNavigate = vi.fn()

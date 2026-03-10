@@ -8,6 +8,10 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'user-123' } }),
 }))
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, loading: false }),
+}))
+
 const mockSupabase = vi.hoisted(() => ({
   from: vi.fn(() => ({
     insert: vi.fn(() => ({

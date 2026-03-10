@@ -8,6 +8,10 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }))
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, loading: false }),
+}))
+
 // Create a flexible mock that can handle different chain patterns
 const createMockChain = (finalResult: unknown) => {
   const chain: Record<string, unknown> = {}

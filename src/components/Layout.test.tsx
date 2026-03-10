@@ -7,6 +7,14 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { email: 'test@example.com' }, signOut: vi.fn() }),
 }))
 
+vi.mock('@/hooks/useUserRole', () => ({
+  useUserRole: () => ({ role: 'user', isAdmin: false, isModerator: false, isAdminOrModerator: false, loading: false }),
+}))
+
+vi.mock('@/components/CreditBadge', () => ({
+  CreditBadge: () => null,
+}))
+
 describe('Layout', () => {
   it('renders header, navigation, and outlet content', () => {
     render(

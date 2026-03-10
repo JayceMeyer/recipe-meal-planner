@@ -6,6 +6,10 @@ import { RecipeForm } from './RecipeForm'
 import '@/test/mocks/supabase'
 import type { Recipe } from '@/types/database'
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
+}))
+
 const mockNavigate = vi.fn()
 
 const mockRecipe: Recipe = {

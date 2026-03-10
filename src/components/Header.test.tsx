@@ -11,6 +11,10 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+vi.mock('@/components/CreditBadge', () => ({
+  CreditBadge: () => null,
+}))
+
 describe('Header', () => {
   beforeEach(() => {
     vi.clearAllMocks()

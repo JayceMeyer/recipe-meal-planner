@@ -1,6 +1,5 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import '@/test/mocks/supabase'
 
 const mockSelect = vi.fn()
 const mockFrom = vi.fn()

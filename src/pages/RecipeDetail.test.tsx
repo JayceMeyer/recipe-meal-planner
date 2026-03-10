@@ -6,6 +6,14 @@ import { RecipeDetail } from './RecipeDetail'
 import '@/test/mocks/supabase'
 import type { Recipe } from '@/types/database'
 
+vi.mock('@/contexts/HouseholdContext', () => ({
+  useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
+}))
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'user-123' } }),
+}))
+
 const mockDeleteRecipe = vi.fn()
 const mockNavigate = vi.fn()
 
