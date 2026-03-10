@@ -672,6 +672,9 @@ export interface Database {
           quantity: string | null
           unit: string | null
           category: string | null
+          is_staple: boolean
+          staple_threshold: string | null
+          staple_unit: string | null
           created_at: string
           updated_at: string
         }
@@ -683,6 +686,9 @@ export interface Database {
           quantity?: string | null
           unit?: string | null
           category?: string | null
+          is_staple?: boolean
+          staple_threshold?: string | null
+          staple_unit?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -694,6 +700,9 @@ export interface Database {
           quantity?: string | null
           unit?: string | null
           category?: string | null
+          is_staple?: boolean
+          staple_threshold?: string | null
+          staple_unit?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -711,6 +720,104 @@ export interface Database {
             referencedColumns: ['id']
           }
         ]
+      }
+      pantry_kits: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          cuisine: string | null
+          category: string | null
+          is_default: boolean
+          household_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          cuisine?: string | null
+          category?: string | null
+          is_default?: boolean
+          household_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          cuisine?: string | null
+          category?: string | null
+          is_default?: boolean
+          household_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pantry_kits_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      pantry_kit_items: {
+        Row: {
+          id: string
+          kit_id: string
+          ingredient_name: string
+          category: string | null
+          quantity: string | null
+          unit: string | null
+        }
+        Insert: {
+          id?: string
+          kit_id: string
+          ingredient_name: string
+          category?: string | null
+          quantity?: string | null
+          unit?: string | null
+        }
+        Update: {
+          id?: string
+          kit_id?: string
+          ingredient_name?: string
+          category?: string | null
+          quantity?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'pantry_kit_items_kit_id_fkey'
+            columns: ['kit_id']
+            referencedRelation: 'pantry_kits'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      cuisine_ingredient_mappings: {
+        Row: {
+          id: string
+          cuisine: string
+          ingredient_name: string
+          category: string | null
+          tier: number
+        }
+        Insert: {
+          id?: string
+          cuisine: string
+          ingredient_name: string
+          category?: string | null
+          tier?: number
+        }
+        Update: {
+          id?: string
+          cuisine?: string
+          ingredient_name?: string
+          category?: string | null
+          tier?: number
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -824,3 +931,12 @@ export type CreditTransactionType = 'purchase' | 'usage' | 'bonus' | 'refund'
 export type HouseholdCredits = Tables<'household_credits'>
 export type CreditTransaction = Tables<'credit_transactions'>
 export type StripeCustomer = Tables<'stripe_customers'>
+
+export type PantryKit = Tables<'pantry_kits'>
+export type PantryKitInsert = TablesInsert<'pantry_kits'>
+export type PantryKitUpdate = TablesUpdate<'pantry_kits'>
+
+export type PantryKitItem = Tables<'pantry_kit_items'>
+export type PantryKitItemInsert = TablesInsert<'pantry_kit_items'>
+
+export type CuisineIngredientMapping = Tables<'cuisine_ingredient_mappings'>
