@@ -48,6 +48,8 @@ const mockRecipe: Recipe = {
   rating: 5,
   cuisine: [],
   source: null,
+  cookbook_id: null,
+  cookbook_page_number: null,
   created_at: '2026-01-27T00:00:00Z',
   updated_at: '2026-01-27T00:00:00Z',
 }

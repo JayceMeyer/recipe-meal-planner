@@ -3,7 +3,7 @@ import { FileText, Camera, Wand2 } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { PantryTextImportModal } from '@/components/PantryTextImportModal'
 import { PantryScanModal } from '@/components/PantryScanModal'
-import { Button } from '@/components/ui/button'
+
 
 interface AIImportStepProps {
   onSkip: () => void

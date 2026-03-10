@@ -30,29 +30,25 @@ __pycache__
 *.njsproj
 *.sln
 *.sw?
-# bd worktree
 agent-z8f/
-# bd worktree
 agent-tdw/
-# bd worktree
 agent-hnu/
-# bd worktree
 agent-5x7/
-# bd worktree
 agent-a3h/
-# bd worktree
 agent-4g0/
-# bd worktree
 agent-oix/
-# bd worktree
 agent-0ge/
-# bd worktree
 agent-gql/
-# bd worktree
 agent-0y1/
-# bd worktree
 agent-4g6/
-# bd worktree
 agent-66h/
 # bd worktree
-agent-6am/
+agent-bnb/
+# bd worktree
+agent-zqr/
+# bd worktree
+agent-i9l/
+# bd worktree
+agent-168/
+# bd worktree
+agent-78x/

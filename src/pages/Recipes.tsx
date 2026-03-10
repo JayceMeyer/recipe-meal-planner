@@ -7,12 +7,12 @@ import { RecipeCard } from '@/components/RecipeCard'
 import { ManageGroupsButton } from '@/components/ManageGroupsDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { Recipe, RecipeGroup } from '@/types/database'
+import type { RecipeWithCookbook, RecipeGroup } from '@/types/database'
 
 interface RecipeSection {
   id: string
   name: string
-  recipes: Recipe[]
+  recipes: RecipeWithCookbook[]
 }
 
 export function Recipes() {
@@ -33,7 +33,7 @@ export function Recipes() {
     const groupedRecipeIds = new Set<string>()
     const result: RecipeSection[] = []
 
-    const ungrouped: Recipe[] = []
+    const ungrouped: RecipeWithCookbook[] = []
     for (const recipe of filtered) {
       const recipeGroups = recipeGroupMap.get(recipe.id) ?? []
       if (recipeGroups.length === 0) {

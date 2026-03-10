@@ -4,11 +4,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { Recipes } from './Recipes'
 import '@/test/mocks/supabase'
-import type { Recipe } from '@/types/database'
+import type { RecipeWithCookbook } from '@/types/database'
 
 const mockRefresh = vi.fn()
 
-const mockRecipes: Recipe[] = [
+const mockRecipes: RecipeWithCookbook[] = [
   {
     id: 'recipe-1',
     user_id: 'user-123',
@@ -26,6 +26,9 @@ const mockRecipes: Recipe[] = [
     rating: 5,
     cuisine: [],
     source: null,
+    cookbook_id: null,
+    cookbook_page_number: null,
+    cookbooks: null,
     created_at: '2026-01-27T00:00:00Z',
     updated_at: '2026-01-27T00:00:00Z',
   },
@@ -46,13 +49,16 @@ const mockRecipes: Recipe[] = [
     rating: 4,
     cuisine: [],
     source: null,
+    cookbook_id: null,
+    cookbook_page_number: null,
+    cookbooks: null,
     created_at: '2026-01-26T00:00:00Z',
     updated_at: '2026-01-26T00:00:00Z',
   },
 ]
 
 let mockHookState = {
-  recipes: [] as Recipe[],
+  recipes: [] as RecipeWithCookbook[],
   loading: false,
   error: null as string | null,
   refresh: mockRefresh,

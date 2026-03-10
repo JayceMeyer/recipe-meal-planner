@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { RecipeCard } from './RecipeCard'
-import type { Recipe } from '@/types/database'
+import type { RecipeWithCookbook } from '@/types/database'
 
-const mockRecipe: Recipe = {
+const mockRecipe: RecipeWithCookbook = {
   id: 'recipe-123',
   user_id: 'user-123',
   household_id: 'household-1',
@@ -21,6 +21,9 @@ const mockRecipe: Recipe = {
   rating: 5,
   cuisine: [],
   source: null,
+  cookbook_id: null,
+  cookbook_page_number: null,
+  cookbooks: null,
   created_at: '2026-01-27T00:00:00Z',
   updated_at: '2026-01-27T00:00:00Z',
 }
@@ -101,7 +104,7 @@ describe('RecipeCard', () => {
   })
 
   it('handles missing optional fields gracefully', () => {
-    const minimalRecipe: Recipe = {
+    const minimalRecipe: RecipeWithCookbook = {
       ...mockRecipe,
       prep_time: null,
       cook_time: null,

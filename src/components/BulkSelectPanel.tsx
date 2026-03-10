@@ -69,7 +69,7 @@ export function BulkSelectPanel({ existingNames, onAdd }: BulkSelectPanelProps) 
     })
   }
 
-  const toggleCategory = (category: string, items: string[]) => {
+  const toggleCategory = (_category: string, items: string[]) => {
     setSelected((prev) => {
       const next = new Set(prev)
       const allSelected = items.every((name) => next.has(name))

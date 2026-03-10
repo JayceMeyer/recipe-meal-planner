@@ -59,10 +59,10 @@ export function useCuisineSuggestions(): UseCuisineSuggestionsResult {
   const { preferences } = useUserPreferences()
   const isMounted = useRef(true)
 
-  const cuisines = preferences?.cuisine_preferences ?? []
-  const dietary = preferences?.dietary_restrictions ?? []
-
   const fetchSuggestions = useCallback(async () => {
+    const cuisines = preferences?.cuisine_preferences ?? []
+    const dietary = preferences?.dietary_restrictions ?? []
+
     if (!user || cuisines.length === 0) {
       setSuggestions([])
       setLoading(false)
@@ -103,7 +103,7 @@ export function useCuisineSuggestions(): UseCuisineSuggestionsResult {
 
     setSuggestions(deduped)
     setLoading(false)
-  }, [user, cuisines.join(','), dietary.join(',')])
+  }, [user, preferences])
 
   useEffect(() => {
     isMounted.current = true
