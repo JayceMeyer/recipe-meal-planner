@@ -8,6 +8,7 @@ interface UseParseRecipeTextResult {
   recipe: ScrapedRecipe | null
   loading: boolean
   error: string | null
+  insufficientCredits: boolean
   reset: () => void
 }
 
@@ -16,6 +17,8 @@ export function useParseRecipeText(): UseParseRecipeTextResult {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { household } = useHousehold()
+
+  const insufficientCredits = error === 'insufficient_credits'
 
   const parse = useCallback(async (text: string) => {
     if (!household) {
@@ -48,5 +51,5 @@ export function useParseRecipeText(): UseParseRecipeTextResult {
     setLoading(false)
   }, [])
 
-  return { parse, recipe, loading, error, reset }
+  return { parse, recipe, loading, error, insufficientCredits, reset }
 }

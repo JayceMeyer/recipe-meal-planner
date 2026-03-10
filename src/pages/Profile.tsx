@@ -10,6 +10,7 @@ import { ApiKeySection } from '@/components/ApiKeySection'
 import { OpenRouterSection } from '@/components/OpenRouterSection'
 import { ThemePicker } from '@/components/ThemePicker'
 import { PurchaseCreditsDialog } from '@/components/PurchaseCreditsDialog'
+import { TransactionHistory } from '@/components/TransactionHistory'
 import { Coins, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -129,6 +130,8 @@ export function Profile() {
           </CardContent>
         </Card>
       )}
+
+      {!isByok && <TransactionHistory />}
 
       <Card>
         <CardHeader>

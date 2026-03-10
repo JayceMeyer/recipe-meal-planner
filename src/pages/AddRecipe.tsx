@@ -8,6 +8,7 @@ import { useParseRecipeText } from '@/hooks/useParseRecipeText'
 import { useGroups } from '@/hooks/useGroups'
 import { supabase } from '@/lib/supabase'
 import { GroupSelector } from '@/components/GroupSelector'
+import { InsufficientCreditsAlert } from '@/components/InsufficientCreditsAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -110,7 +111,7 @@ export function AddRecipe() {
   const { user } = useAuth()
   const { household } = useHousehold()
   const { scrape, recipe: scrapeRecipe, loading: scrapeLoading, error: scrapeError, reset: scrapeReset } = useScrapeRecipe()
-  const { parse, recipe: parseRecipe, loading: parseLoading, error: parseError, reset: parseReset } = useParseRecipeText()
+  const { parse, recipe: parseRecipe, loading: parseLoading, error: parseError, insufficientCredits, reset: parseReset } = useParseRecipeText()
   const { groups, createGroup } = useGroups()
   const navigate = useNavigate()
 
@@ -261,7 +262,9 @@ export function AddRecipe() {
           ) : (
             <form onSubmit={handleParse} className="flex flex-col gap-6">
               <CardContent className="space-y-4">
-                {error && (
+                {insufficientCredits ? (
+                  <InsufficientCreditsAlert />
+                ) : error && (
                   <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
                     {error}
                   </div>
