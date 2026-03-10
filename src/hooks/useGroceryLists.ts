@@ -15,6 +15,7 @@ interface UseGroceryListsResult {
   createList: (name: string) => Promise<GroceryList | null>
   updateList: (id: string, name: string) => Promise<boolean>
   deleteList: (id: string) => Promise<boolean>
+  deleteAllLists: () => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -161,6 +162,24 @@ export function useGroceryLists(): UseGroceryListsResult {
     [activeListId, setActiveListId]
   )
 
+  const deleteAllLists = useCallback(async (): Promise<boolean> => {
+    if (!household) return false
+
+    const { error: deleteError } = await supabase
+      .from('grocery_lists')
+      .delete()
+      .eq('household_id', household.id)
+
+    if (deleteError) {
+      setError(deleteError.message)
+      return false
+    }
+
+    setLists([])
+    setActiveListId(null)
+    return true
+  }, [household, setActiveListId])
+
   return {
     lists,
     loading,
@@ -170,6 +189,7 @@ export function useGroceryLists(): UseGroceryListsResult {
     createList,
     updateList,
     deleteList,
+    deleteAllLists,
     refresh: fetchLists,
   }
 }
@@ -187,6 +207,7 @@ interface UseGroceryListsWithCountsResult {
   createList: (name: string) => Promise<GroceryList | null>
   updateList: (id: string, name: string) => Promise<boolean>
   deleteList: (id: string) => Promise<boolean>
+  deleteAllLists: () => Promise<boolean>
   refresh: () => Promise<void>
 }
 

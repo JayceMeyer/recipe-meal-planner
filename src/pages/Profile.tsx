@@ -13,6 +13,7 @@ import { PurchaseCreditsDialog } from '@/components/PurchaseCreditsDialog'
 import { TransactionHistory } from '@/components/TransactionHistory'
 import { Coins, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DataManagementSection } from '@/components/DataManagementSection'
 
 const CUISINE_OPTIONS = [
   'Italian', 'Mexican', 'Asian', 'Indian', 'Mediterranean',
@@ -198,6 +199,7 @@ export function Profile() {
           </div>
         </CardContent>
       </Card>
+      <DataManagementSection />
     </div>
   )
 }

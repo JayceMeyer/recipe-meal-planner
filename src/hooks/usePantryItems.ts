@@ -12,6 +12,7 @@ interface UsePantryItemsResult {
   addItem: (ingredientName: string, quantity?: string, unit?: string, category?: string) => Promise<PantryItem | null>
   updateItem: (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string; is_staple?: boolean; staple_threshold?: string; staple_unit?: string }) => Promise<boolean>
   deleteItem: (id: string) => Promise<boolean>
+  deleteAllItems: () => Promise<boolean>
   addItems: (items: { ingredient_name: string; quantity?: string; unit?: string }[]) => Promise<boolean>
   refresh: () => Promise<void>
 }
@@ -131,6 +132,23 @@ export function usePantryItems(): UsePantryItemsResult {
     return true
   }, [])
 
+  const deleteAllItems = useCallback(async (): Promise<boolean> => {
+    if (!household) return false
+
+    const { error: deleteError } = await supabase
+      .from('pantry_items')
+      .delete()
+      .eq('household_id', household.id)
+
+    if (deleteError) {
+      setError(deleteError.message)
+      return false
+    }
+
+    setItems([])
+    return true
+  }, [household])
+
   const addItems = useCallback(
     async (newItems: { ingredient_name: string; quantity?: string; unit?: string }[]): Promise<boolean> => {
       if (!user || !household || newItems.length === 0) return false
@@ -167,6 +185,7 @@ export function usePantryItems(): UsePantryItemsResult {
     addItem,
     updateItem,
     deleteItem,
+    deleteAllItems,
     addItems,
     refresh: fetchItems,
   }
