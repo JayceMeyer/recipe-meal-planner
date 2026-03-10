@@ -1,11 +1,25 @@
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Loader2, Plus, Package, Search } from 'lucide-react'
+import { Camera, ChevronDown, ChevronRight, FileText, Loader2, Pin, Plus, Package, Search, Save } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
+import { usePantryKits } from '@/hooks/usePantryKits'
+import { useCuisineSuggestions } from '@/hooks/useCuisineSuggestions'
 import { PantryItem } from '@/components/PantryItem'
+import { PantryKitSelector } from '@/components/PantryKitSelector'
+import { SmartSuggestions } from '@/components/SmartSuggestions'
+import { PantryTextImportModal } from '@/components/PantryTextImportModal'
+import { PantryScanModal } from '@/components/PantryScanModal'
 import { RecipeSuggestions } from '@/components/RecipeSuggestions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { categorizeIngredient, getCategoryOrder, CATEGORIES } from '@/utils/ingredientCategories'
 import type { PantryItem as PantryItemType } from '@/types/database'
 
@@ -15,14 +29,29 @@ interface GroupedItems {
 }
 
 export function Pantry() {
-  const { items, loading, error, addItem, updateItem, deleteItem } = usePantryItems()
+  const { items, loading, error, addItem, addItems, updateItem, deleteItem, refresh } = usePantryItems()
   const { canMake, almostMakeable, loading: suggestionsLoading } = usePantrySuggestions()
+  const { kits, loading: kitsLoading, applyKit, saveAsKit } = usePantryKits()
+  const { suggestions, loading: cuisineSuggestionsLoading } = useCuisineSuggestions()
 
   const [newItemName, setNewItemName] = useState('')
   const [newItemCategory, setNewItemCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [showStaplesOnly, setShowStaplesOnly] = useState(false)
+  const [showKits, setShowKits] = useState(false)
+  const [showTextImport, setShowTextImport] = useState(false)
+  const [showScanImport, setShowScanImport] = useState(false)
+  const [showSaveKit, setShowSaveKit] = useState(false)
+  const [saveKitName, setSaveKitName] = useState('')
+  const [saveKitDesc, setSaveKitDesc] = useState('')
+  const [savingKit, setSavingKit] = useState(false)
+
+  const existingNames = useMemo(
+    () => new Set(items.map((i) => i.ingredient_name.toLowerCase())),
+    [items],
+  )
 
   const groups = useMemo(() => {
     const categoryMap = new Map<string, PantryItemType[]>()
@@ -53,18 +82,31 @@ export function Pantry() {
     return result
   }, [items])
 
+  const stapleCount = useMemo(() => items.filter((i) => i.is_staple).length, [items])
+
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return groups
-    const query = searchQuery.toLowerCase()
-    return groups
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) =>
-          item.ingredient_name.toLowerCase().includes(query),
-        ),
-      }))
-      .filter((group) => group.items.length > 0)
-  }, [groups, searchQuery])
+    let filtered = groups
+    if (showStaplesOnly) {
+      filtered = filtered
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => item.is_staple),
+        }))
+        .filter((group) => group.items.length > 0)
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) =>
+            item.ingredient_name.toLowerCase().includes(query),
+          ),
+        }))
+        .filter((group) => group.items.length > 0)
+    }
+    return filtered
+  }, [groups, searchQuery, showStaplesOnly])
 
   const autoCategory = newItemName.trim() ? categorizeIngredient(newItemName.trim()) : ''
   const selectedCategory = newItemCategory || autoCategory
@@ -77,6 +119,34 @@ export function Pantry() {
     setAdding(false)
     setNewItemName('')
     setNewItemCategory('')
+  }
+
+  const handleApplyKit = async (kitId: string) => {
+    const result = await applyKit(kitId, existingNames)
+    if (result && result.added > 0) {
+      await refresh()
+    }
+    return result
+  }
+
+  const handleBulkAdd = async (names: string[]) => {
+    await addItems(names.map((name) => ({ ingredient_name: name })))
+  }
+
+  const handleSaveAsKit = async () => {
+    if (!saveKitName.trim() || items.length === 0) return
+    setSavingKit(true)
+    const kitItems = items.map((item) => ({
+      ingredient_name: item.ingredient_name,
+      category: item.category,
+      quantity: item.quantity,
+      unit: item.unit,
+    }))
+    await saveAsKit(saveKitName.trim(), saveKitDesc.trim(), kitItems)
+    setSavingKit(false)
+    setShowSaveKit(false)
+    setSaveKitName('')
+    setSaveKitDesc('')
   }
 
   const toggleCategory = (category: string) => {
@@ -109,6 +179,53 @@ export function Pantry() {
               <p className="text-sm text-muted-foreground">
                 {items.length} {items.length === 1 ? 'item' : 'items'}
               </p>
+            </div>
+            <div className="flex gap-2">
+              {stapleCount > 0 && (
+                <Button
+                  variant={showStaplesOnly ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowStaplesOnly((v) => !v)}
+                >
+                  <Pin className="size-4" />
+                  <span className="hidden sm:inline">Staples</span>
+                  <span className="text-xs">({stapleCount})</span>
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowKits((v) => !v)}
+              >
+                <Package className="size-4" />
+                <span className="hidden sm:inline">Kits</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTextImport(true)}
+              >
+                <FileText className="size-4" />
+                <span className="hidden sm:inline">Import</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowScanImport(true)}
+              >
+                <Camera className="size-4" />
+                <span className="hidden sm:inline">Scan</span>
+              </Button>
+              {items.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSaveKit(true)}
+                >
+                  <Save className="size-4" />
+                  <span className="hidden sm:inline">Save as Kit</span>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -167,6 +284,28 @@ export function Pantry() {
           </div>
         )}
 
+        {showKits && (
+          <div className="mb-6">
+            <PantryKitSelector
+              kits={kits}
+              loading={kitsLoading}
+              existingNames={existingNames}
+              onApply={handleApplyKit}
+            />
+          </div>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="mb-6">
+            <SmartSuggestions
+              suggestions={suggestions}
+              loading={cuisineSuggestionsLoading}
+              existingNames={existingNames}
+              onAdd={handleBulkAdd}
+            />
+          </div>
+        )}
+
         {items.length > 0 && (
           <RecipeSuggestions
             canMake={canMake}
@@ -179,9 +318,15 @@ export function Pantry() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="size-16 text-muted-foreground/40 mb-4" />
             <h2 className="text-xl font-medium mb-2">Your pantry is empty</h2>
-            <p className="text-muted-foreground">
-              Add items above or they'll be added automatically from your grocery lists.
+            <p className="text-muted-foreground mb-4">
+              Add items above or use a starter kit to get going quickly.
             </p>
+            {!showKits && (
+              <Button variant="outline" onClick={() => setShowKits(true)}>
+                <Package className="size-4" />
+                Browse Starter Kits
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
@@ -217,6 +362,75 @@ export function Pantry() {
           </div>
         )}
       </div>
+
+      <Dialog open={showSaveKit} onOpenChange={setShowSaveKit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Pantry as Kit</DialogTitle>
+            <DialogDescription>
+              Save your current {items.length} pantry items as a reusable kit.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Kit Name</label>
+              <Input
+                placeholder="e.g. My Kitchen Essentials"
+                value={saveKitName}
+                onChange={(e) => setSaveKitName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description (optional)</label>
+              <Input
+                placeholder="What this kit is for..."
+                value={saveKitDesc}
+                onChange={(e) => setSaveKitDesc(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveKit(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveAsKit}
+              disabled={!saveKitName.trim() || savingKit}
+            >
+              {savingKit ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+              Save Kit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <PantryTextImportModal
+        open={showTextImport}
+        onOpenChange={setShowTextImport}
+        existingNames={existingNames}
+        onImport={async (importItems) => {
+          await addItems(importItems.map((item) => ({
+            ingredient_name: item.ingredient_name,
+            quantity: item.quantity,
+            unit: item.unit,
+          })))
+        }}
+      />
+
+      <PantryScanModal
+        open={showScanImport}
+        onOpenChange={setShowScanImport}
+        existingNames={existingNames}
+        onImport={async (importItems) => {
+          await addItems(importItems.map((item) => ({
+            ingredient_name: item.ingredient_name,
+            quantity: item.quantity,
+            unit: item.unit,
+          })))
+        }}
+      />
     </div>
   )
 }

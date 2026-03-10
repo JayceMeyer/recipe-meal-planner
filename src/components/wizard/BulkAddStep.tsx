@@ -1,32 +1,38 @@
-import { useState } from 'react'
-import { Plus, X, Loader2, Package, RefreshCw } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, X, Loader2, LayoutGrid } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
+import { BulkSelectPanel } from '@/components/BulkSelectPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient } from '@/utils/ingredientCategories'
-import { COMMON_PANTRY_ITEMS } from '@/data/commonPantryItems'
 
-interface PantrySetupStepProps {
+interface BulkAddStepProps {
   onSkip: () => void
 }
 
-export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
-  const { items, loading, error, addItem, deleteItem } = usePantryItems()
+export function BulkAddStep({ onSkip }: BulkAddStepProps) {
+  const { items, loading, error, addItem, addItems, deleteItem } = usePantryItems()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
-  const [suggestionPage, setSuggestionPage] = useState(0)
-  const handleAdd = async (name?: string) => {
-    const itemName = (name || inputValue).trim()
+
+  const existingNames = useMemo(
+    () => new Set(items.map((i) => i.ingredient_name.toLowerCase())),
+    [items],
+  )
+
+  const handleAdd = async () => {
+    const itemName = inputValue.trim()
     if (!itemName) return
 
     setAdding(true)
     await addItem(itemName)
     setAdding(false)
-    if (!name) setInputValue('')
+    setInputValue('')
   }
 
-  const existingNames = new Set(items.map((i) => i.ingredient_name.toLowerCase()))
-  const suggestedItems = COMMON_PANTRY_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
+  const handleBulkAdd = async (names: string[]) => {
+    await addItems(names.map((name) => ({ ingredient_name: name })))
+  }
 
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const cat = (!item.category || item.category === 'Pantry')
@@ -40,12 +46,17 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <Package className="mx-auto size-10 text-primary mb-2" />
-        <h2 className="text-xl font-semibold">What's in your pantry?</h2>
+        <LayoutGrid className="mx-auto size-10 text-primary mb-2" />
+        <h2 className="text-xl font-semibold">Browse & add items</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Add ingredients you already have at home
+          Select from common pantry items or type to add your own
         </p>
       </div>
+
+      <BulkSelectPanel
+        existingNames={existingNames}
+        onAdd={handleBulkAdd}
+      />
 
       <div className="flex gap-2">
         <Input
@@ -59,48 +70,14 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
             }
           }}
           disabled={adding}
-          autoFocus
         />
-        <Button onClick={() => handleAdd()} disabled={adding || !inputValue.trim()}>
+        <Button onClick={handleAdd} disabled={adding || !inputValue.trim()}>
           {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
         </Button>
       </div>
 
       {error && (
         <p className="text-sm text-destructive">{error}</p>
-      )}
-
-      {suggestedItems.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground">Quick add common items:</p>
-            {suggestedItems.length > 10 && (
-              <button
-                type="button"
-                onClick={() => setSuggestionPage((p) => (p + 1) * 10 >= suggestedItems.length ? 0 : p + 1)}
-                disabled={adding}
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <RefreshCw className="size-3" />
-                More
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestedItems.slice(suggestionPage * 10, suggestionPage * 10 + 10).map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => handleAdd(name)}
-                disabled={adding}
-                className="inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1 text-sm text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-              >
-                <Plus className="size-3" />
-                {name}
-              </button>
-            ))}
-          </div>
-        </div>
       )}
 
       {loading && items.length === 0 && (

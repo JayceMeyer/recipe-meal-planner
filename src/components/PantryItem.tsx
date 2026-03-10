@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Check, Pencil, Trash2 } from 'lucide-react'
+import { Check, Pencil, Pin, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -9,7 +9,7 @@ import type { PantryItem as PantryItemType } from '@/types/database'
 interface PantryItemProps {
   item: PantryItemType
   onDelete: () => void
-  onUpdate: (updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }) => void
+  onUpdate: (updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string; is_staple?: boolean; staple_threshold?: string; staple_unit?: string }) => void
 }
 
 export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
@@ -75,6 +75,17 @@ export function PantryItem({ item, onDelete, onUpdate }: PantryItemProps) {
           )}
           style={{ transform: `translateX(-${swipeOffset}px)` }}
         >
+          <button
+            onClick={() => onUpdate({ is_staple: !item.is_staple })}
+            className={cn(
+              'shrink-0 transition-colors',
+              item.is_staple ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground',
+            )}
+            title={item.is_staple ? 'Remove from staples' : 'Mark as staple'}
+          >
+            <Pin className="size-4" />
+          </button>
+
           <button
             onClick={() => setDialogOpen(true)}
             className="flex items-center gap-2 flex-1 min-w-0 text-left group"

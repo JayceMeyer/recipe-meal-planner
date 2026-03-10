@@ -15,7 +15,7 @@ interface PantryItemEditDialogProps {
   item: PantryItem
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }) => void
+  onSave: (updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string; is_staple?: boolean; staple_threshold?: string; staple_unit?: string }) => void
 }
 
 export function PantryItemEditDialog({ item, open, onOpenChange, onSave }: PantryItemEditDialogProps) {
@@ -23,14 +23,20 @@ export function PantryItemEditDialog({ item, open, onOpenChange, onSave }: Pantr
   const [quantity, setQuantity] = useState(item.quantity || '')
   const [unit, setUnit] = useState(item.unit || '')
   const [category, setCategory] = useState(item.category || 'Other')
+  const [isStaple, setIsStaple] = useState(item.is_staple)
+  const [stapleThreshold, setStapleThreshold] = useState(item.staple_threshold || '')
+  const [stapleUnit, setStapleUnit] = useState(item.staple_unit || '')
 
   const handleSave = () => {
-    const updates: Record<string, string | undefined> = {}
+    const updates: Record<string, string | boolean | undefined> = {}
 
     if (name !== item.ingredient_name) updates.ingredient_name = name
     if (quantity !== (item.quantity || '')) updates.quantity = quantity || undefined
     if (unit !== (item.unit || '')) updates.unit = unit || undefined
     if (category !== (item.category || 'Other')) updates.category = category
+    if (isStaple !== item.is_staple) updates.is_staple = isStaple
+    if (stapleThreshold !== (item.staple_threshold || '')) updates.staple_threshold = stapleThreshold || undefined
+    if (stapleUnit !== (item.staple_unit || '')) updates.staple_unit = stapleUnit || undefined
 
     if (Object.keys(updates).length > 0) {
       onSave(updates)
@@ -89,6 +95,48 @@ export function PantryItemEditDialog({ item, open, onOpenChange, onSave }: Pantr
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
+          </div>
+
+          <div className="border-t pt-4 space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isStaple}
+                onChange={(e) => setIsStaple(e.target.checked)}
+                className="size-4 rounded border-input"
+              />
+              <div>
+                <span className="text-sm font-medium">Always Stocked (Staple)</span>
+                <p className="text-xs text-muted-foreground">
+                  Staples are always considered available for recipe matching
+                </p>
+              </div>
+            </label>
+
+            {isStaple && (
+              <div className="grid grid-cols-2 gap-3 pl-7">
+                <div className="grid gap-1.5">
+                  <label htmlFor="edit-threshold" className="text-xs text-muted-foreground">Restock below</label>
+                  <Input
+                    id="edit-threshold"
+                    value={stapleThreshold}
+                    onChange={(e) => setStapleThreshold(e.target.value)}
+                    placeholder="e.g. 1"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <label htmlFor="edit-staple-unit" className="text-xs text-muted-foreground">Unit</label>
+                  <Input
+                    id="edit-staple-unit"
+                    value={stapleUnit}
+                    onChange={(e) => setStapleUnit(e.target.value)}
+                    placeholder="e.g. lb"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
