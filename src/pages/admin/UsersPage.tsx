@@ -9,6 +9,7 @@ import type { AppRole } from '@/types/database'
 
 interface UserRow {
   user_id: string
+  email: string | null
   role: AppRole
   created_at: string
   household_name: string | null
@@ -44,7 +45,7 @@ export function AdminUsersPage() {
 
     const userIds = roleData.map((r) => r.user_id)
 
-    const [membersRes, recipesRes, mealPlansRes, pantryRes, prefsRes] =
+    const [membersRes, recipesRes, mealPlansRes, pantryRes, prefsRes, emailsRes] =
       await Promise.all([
         supabase
           .from('household_members')
@@ -66,6 +67,7 @@ export function AdminUsersPage() {
           .from('user_preferences')
           .select('user_id, openrouter_api_key')
           .in('user_id', userIds),
+        supabase.rpc('get_user_emails', { p_user_ids: userIds }),
       ])
 
     const householdMap = new Map<string, { name: string; id: string }>()
@@ -100,6 +102,11 @@ export function AdminUsersPage() {
       }
     }
 
+    const emailMap = new Map<string, string>()
+    for (const e of emailsRes.data ?? []) {
+      emailMap.set(e.user_id, e.email)
+    }
+
     const recipeCountMap = new Map<string, number>()
     for (const r of recipesRes.data ?? []) {
       recipeCountMap.set(r.user_id, (recipeCountMap.get(r.user_id) ?? 0) + 1)
@@ -132,6 +139,7 @@ export function AdminUsersPage() {
       const hh = householdMap.get(r.user_id)
       return {
         user_id: r.user_id,
+        email: emailMap.get(r.user_id) ?? null,
         role: r.role,
         created_at: r.created_at,
         household_name: hh?.name ?? null,
@@ -195,7 +203,7 @@ export function AdminUsersPage() {
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">
-                      {user.user_id.slice(0, 8)}...
+                      {user.email ?? user.user_id.slice(0, 8) + '...'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {user.household_name ?? 'No household'}
