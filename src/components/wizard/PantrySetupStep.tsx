@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Plus, X, Loader2, Package, RefreshCw } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
+import { usePantryKits } from '@/hooks/usePantryKits'
+import { PantryKitSelector } from '@/components/PantryKitSelector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { categorizeIngredient } from '@/utils/ingredientCategories'
@@ -11,10 +13,12 @@ interface PantrySetupStepProps {
 }
 
 export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
-  const { items, loading, error, addItem, deleteItem } = usePantryItems()
+  const { items, loading, error, addItem, deleteItem, refresh } = usePantryItems()
+  const { kits, loading: kitsLoading, applyKit } = usePantryKits()
   const [inputValue, setInputValue] = useState('')
   const [adding, setAdding] = useState(false)
   const [suggestionPage, setSuggestionPage] = useState(0)
+
   const handleAdd = async (name?: string) => {
     const itemName = (name || inputValue).trim()
     if (!itemName) return
@@ -27,6 +31,14 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
 
   const existingNames = new Set(items.map((i) => i.ingredient_name.toLowerCase()))
   const suggestedItems = COMMON_PANTRY_ITEMS.filter((name) => !existingNames.has(name.toLowerCase()))
+
+  const handleApplyKit = async (kitId: string) => {
+    const result = await applyKit(kitId, existingNames)
+    if (result && result.added > 0) {
+      await refresh()
+    }
+    return result
+  }
 
   const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
     const cat = (!item.category || item.category === 'Pantry')
@@ -43,9 +55,16 @@ export function PantrySetupStep({ onSkip }: PantrySetupStepProps) {
         <Package className="mx-auto size-10 text-primary mb-2" />
         <h2 className="text-xl font-semibold">What's in your pantry?</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Add ingredients you already have at home
+          Start with a kit or add items individually
         </p>
       </div>
+
+      <PantryKitSelector
+        kits={kits}
+        loading={kitsLoading}
+        existingNames={existingNames}
+        onApply={handleApplyKit}
+      />
 
       <div className="flex gap-2">
         <Input
