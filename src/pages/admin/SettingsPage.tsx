@@ -10,6 +10,7 @@ import type { AppSettings } from '@/types/database'
 export function AdminSettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [markup, setMarkup] = useState('')
+  const [signupBonus, setSignupBonus] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -27,6 +28,7 @@ export function AdminSettingsPage() {
       if (data) {
         setSettings(data)
         setMarkup(String(data.ai_markup_percent))
+        setSignupBonus(String(data.signup_bonus_credits))
       }
       setLoading(false)
     }
@@ -35,14 +37,18 @@ export function AdminSettingsPage() {
   }, [])
 
   const handleSave = async () => {
-    const value = parseFloat(markup)
-    if (isNaN(value) || value < 0 || value > 100) return
+    const markupValue = parseFloat(markup)
+    if (isNaN(markupValue) || markupValue < 0 || markupValue > 100) return
+
+    const bonusValue = parseInt(signupBonus, 10)
+    if (isNaN(bonusValue) || bonusValue < 0) return
 
     setSaving(true)
     const { data, error } = await supabase
       .from('app_settings')
       .update({
-        ai_markup_percent: value,
+        ai_markup_percent: markupValue,
+        signup_bonus_credits: bonusValue,
         updated_by: user?.id,
         updated_at: new Date().toISOString(),
       })
@@ -68,7 +74,9 @@ export function AdminSettingsPage() {
 
   if (!settings) return null
 
-  const hasChanged = markup !== String(settings.ai_markup_percent)
+  const hasChanged =
+    markup !== String(settings.ai_markup_percent) ||
+    signupBonus !== String(settings.signup_bonus_credits)
 
   return (
     <div className="space-y-6">
@@ -98,31 +106,58 @@ export function AdminSettingsPage() {
               <span className="text-sm text-muted-foreground">%</span>
             </div>
           </div>
-
-          {isAdmin && (
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={saving || !hasChanged}
-              >
-                {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
-              </Button>
-            </div>
-          )}
-
-          {!isAdmin && (
-            <p className="text-sm text-muted-foreground italic">
-              Only admins can edit settings.
-            </p>
-          )}
-
-          {settings.updated_at && (
-            <p className="text-xs text-muted-foreground">
-              Last updated: {new Date(settings.updated_at).toLocaleString()}
-            </p>
-          )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Credit Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium" htmlFor="signupBonus">
+              Signup Bonus Credits
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Number of credits granted to new households upon creation.
+            </p>
+            <div className="flex items-center gap-3 max-w-xs">
+              <Input
+                id="signupBonus"
+                type="number"
+                min="0"
+                step="1"
+                value={signupBonus}
+                onChange={(e) => setSignupBonus(e.target.value)}
+                disabled={!isAdmin}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleSave}
+            disabled={saving || !hasChanged}
+          >
+            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
+          </Button>
+        </div>
+      )}
+
+      {!isAdmin && (
+        <p className="text-sm text-muted-foreground italic">
+          Only admins can edit settings.
+        </p>
+      )}
+
+      {settings.updated_at && (
+        <p className="text-xs text-muted-foreground">
+          Last updated: {new Date(settings.updated_at).toLocaleString()}
+        </p>
+      )}
     </div>
   )
 }

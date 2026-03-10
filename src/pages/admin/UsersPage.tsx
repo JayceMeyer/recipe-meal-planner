@@ -3,7 +3,8 @@ import { supabase } from '@/lib/supabase'
 import { useUserRole } from '@/hooks/useUserRole'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Key } from 'lucide-react'
+import { ManageCreditsDialog } from '@/components/admin/ManageCreditsDialog'
 import type { AppRole } from '@/types/database'
 
 interface UserRow {
@@ -11,14 +12,23 @@ interface UserRow {
   role: AppRole
   created_at: string
   household_name: string | null
+  household_id: string | null
   recipe_count: number
   meal_plan_count: number
+  credit_balance: number | null
+  ingredient_count: number
+  has_byok: boolean
 }
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedUser, setExpandedUser] = useState<string | null>(null)
+  const [creditDialog, setCreditDialog] = useState<{
+    userId: string
+    householdId: string
+    householdName: string
+  } | null>(null)
   const { isAdmin } = useUserRole()
 
   const fetchUsers = useCallback(async () => {
@@ -34,25 +44,60 @@ export function AdminUsersPage() {
 
     const userIds = roleData.map((r) => r.user_id)
 
-    const [membersRes, recipesRes, mealPlansRes] = await Promise.all([
-      supabase
-        .from('household_members')
-        .select('user_id, households(name)')
-        .in('user_id', userIds),
-      supabase
-        .from('recipes')
-        .select('user_id')
-        .in('user_id', userIds),
-      supabase
-        .from('meal_plans')
-        .select('user_id')
-        .in('user_id', userIds),
-    ])
+    const [membersRes, recipesRes, mealPlansRes, pantryRes, prefsRes] =
+      await Promise.all([
+        supabase
+          .from('household_members')
+          .select('user_id, household_id, households(name)')
+          .in('user_id', userIds),
+        supabase
+          .from('recipes')
+          .select('user_id')
+          .in('user_id', userIds),
+        supabase
+          .from('meal_plans')
+          .select('user_id')
+          .in('user_id', userIds),
+        supabase
+          .from('pantry_items')
+          .select('user_id')
+          .in('user_id', userIds),
+        supabase
+          .from('user_preferences')
+          .select('user_id, openrouter_api_key')
+          .in('user_id', userIds),
+      ])
 
-    const householdMap = new Map<string, string>()
+    const householdMap = new Map<string, { name: string; id: string }>()
     for (const m of membersRes.data ?? []) {
       const household = m.households as unknown as { name: string } | null
-      if (household) householdMap.set(m.user_id, household.name)
+      if (household) {
+        householdMap.set(m.user_id, {
+          name: household.name,
+          id: m.household_id,
+        })
+      }
+    }
+
+    // Collect all household IDs and fetch credit balances
+    const householdIds = [
+      ...new Set(
+        (membersRes.data ?? [])
+          .map((m) => m.household_id)
+          .filter(Boolean)
+      ),
+    ]
+
+    const creditMap = new Map<string, number>()
+    if (householdIds.length > 0) {
+      const { data: creditsData } = await supabase
+        .from('household_credits')
+        .select('household_id, balance')
+        .in('household_id', householdIds)
+
+      for (const c of creditsData ?? []) {
+        creditMap.set(c.household_id, c.balance)
+      }
     }
 
     const recipeCountMap = new Map<string, number>()
@@ -62,24 +107,51 @@ export function AdminUsersPage() {
 
     const mealPlanCountMap = new Map<string, number>()
     for (const m of mealPlansRes.data ?? []) {
-      mealPlanCountMap.set(m.user_id, (mealPlanCountMap.get(m.user_id) ?? 0) + 1)
+      mealPlanCountMap.set(
+        m.user_id,
+        (mealPlanCountMap.get(m.user_id) ?? 0) + 1
+      )
     }
 
-    const enrichedUsers: UserRow[] = roleData.map((r) => ({
-      user_id: r.user_id,
-      role: r.role,
-      created_at: r.created_at,
-      household_name: householdMap.get(r.user_id) ?? null,
-      recipe_count: recipeCountMap.get(r.user_id) ?? 0,
-      meal_plan_count: mealPlanCountMap.get(r.user_id) ?? 0,
-    }))
+    const pantryCountMap = new Map<string, number>()
+    for (const p of pantryRes.data ?? []) {
+      pantryCountMap.set(
+        p.user_id,
+        (pantryCountMap.get(p.user_id) ?? 0) + 1
+      )
+    }
+
+    const byokSet = new Set<string>()
+    for (const pref of prefsRes.data ?? []) {
+      if (pref.openrouter_api_key != null) {
+        byokSet.add(pref.user_id)
+      }
+    }
+
+    const enrichedUsers: UserRow[] = roleData.map((r) => {
+      const hh = householdMap.get(r.user_id)
+      return {
+        user_id: r.user_id,
+        role: r.role,
+        created_at: r.created_at,
+        household_name: hh?.name ?? null,
+        household_id: hh?.id ?? null,
+        recipe_count: recipeCountMap.get(r.user_id) ?? 0,
+        meal_plan_count: mealPlanCountMap.get(r.user_id) ?? 0,
+        credit_balance: hh?.id ? (creditMap.get(hh.id) ?? null) : null,
+        ingredient_count: pantryCountMap.get(r.user_id) ?? 0,
+        has_byok: byokSet.has(r.user_id),
+      }
+    })
 
     setUsers(enrichedUsers)
     setLoading(false)
   }, [])
 
   useEffect(() => {
-    queueMicrotask(() => { fetchUsers() })
+    queueMicrotask(() => {
+      fetchUsers()
+    })
   }, [fetchUsers])
 
   const updateRole = async (userId: string, newRole: AppRole) => {
@@ -131,6 +203,11 @@ export function AdminUsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  {user.credit_balance != null && (
+                    <span className="text-xs text-muted-foreground">
+                      {user.credit_balance} credits
+                    </span>
+                  )}
                   <span
                     className={`text-xs px-2 py-1 rounded-full font-medium ${
                       user.role === 'admin'
@@ -142,6 +219,12 @@ export function AdminUsersPage() {
                   >
                     {user.role}
                   </span>
+                  {user.has_byok && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      <Key className="h-3 w-3" />
+                      BYOK
+                    </span>
+                  )}
                   {expandedUser === user.user_id ? (
                     <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (
@@ -173,6 +256,20 @@ export function AdminUsersPage() {
                       <span className="text-muted-foreground">Meal Plans</span>
                       <p className="font-medium">{user.meal_plan_count}</p>
                     </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        Credit Balance
+                      </span>
+                      <p className="font-medium">
+                        {user.credit_balance != null
+                          ? user.credit_balance
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Ingredients</span>
+                      <p className="font-medium">{user.ingredient_count}</p>
+                    </div>
                   </div>
 
                   {isAdmin && (
@@ -193,6 +290,22 @@ export function AdminUsersPage() {
                           </Button>
                         )
                       )}
+                      {user.household_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-auto"
+                          onClick={() =>
+                            setCreditDialog({
+                              userId: user.user_id,
+                              householdId: user.household_id!,
+                              householdName: user.household_name ?? 'Unknown',
+                            })
+                          }
+                        >
+                          Manage Credits
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -206,6 +319,17 @@ export function AdminUsersPage() {
           )}
         </div>
       </CardContent>
+      {creditDialog && (
+        <ManageCreditsDialog
+          open={!!creditDialog}
+          onOpenChange={(open) => {
+            if (!open) setCreditDialog(null)
+          }}
+          householdId={creditDialog.householdId}
+          householdName={creditDialog.householdName}
+          onCreditsChanged={fetchUsers}
+        />
+      )}
     </Card>
   )
 }
