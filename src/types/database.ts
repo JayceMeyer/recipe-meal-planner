@@ -996,3 +996,7 @@ export type CuisineIngredientMapping = Tables<'cuisine_ingredient_mappings'>
 export type Cookbook = Tables<'cookbooks'>
 export type CookbookInsert = TablesInsert<'cookbooks'>
 export type CookbookUpdate = TablesUpdate<'cookbooks'>
+
+export type RecipeWithCookbook = Recipe & {
+  cookbooks: { title: string } | null
+}

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
+  Book,
   Camera,
   Check,
   Clock,
@@ -190,6 +191,13 @@ export function RecipeDetail() {
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                     <Sparkles className="size-3" />
                     AI Generated
+                  </span>
+                )}
+                {recipe.cookbooks && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    <Book className="size-3" />
+                    From: {recipe.cookbooks.title}
+                    {recipe.cookbook_page_number && `, p. ${recipe.cookbook_page_number}`}
                   </span>
                 )}
               </div>

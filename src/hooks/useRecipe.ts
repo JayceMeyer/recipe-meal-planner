@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Recipe } from '@/types/database'
+import type { RecipeWithCookbook } from '@/types/database'
 
 interface UseRecipeResult {
-  recipe: Recipe | null
+  recipe: RecipeWithCookbook | null
   loading: boolean
   error: string | null
   deleteRecipe: () => Promise<boolean>
@@ -11,7 +11,7 @@ interface UseRecipeResult {
 }
 
 export function useRecipe(id: string | undefined): UseRecipeResult {
-  const [recipe, setRecipe] = useState<Recipe | null>(null)
+  const [recipe, setRecipe] = useState<RecipeWithCookbook | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
@@ -31,7 +31,7 @@ export function useRecipe(id: string | undefined): UseRecipeResult {
 
       const { data, error: fetchError } = await supabase
         .from('recipes')
-        .select('*')
+        .select('*, cookbooks(title)')
         .eq('id', id)
         .single()
 
