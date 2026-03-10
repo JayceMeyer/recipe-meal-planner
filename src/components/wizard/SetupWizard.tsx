@@ -2,8 +2,11 @@ import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PantrySetupStep } from './PantrySetupStep'
 import { PreferencesStep } from './PreferencesStep'
+import { SmartSuggestionsStep } from './SmartSuggestionsStep'
+import { KitSelectionStep } from './KitSelectionStep'
+import { BulkAddStep } from './BulkAddStep'
+import { AIImportStep } from './AIImportStep'
 import { ApiKeyStep } from './ApiKeyStep'
 import { RecipeSuggestionsStep } from './RecipeSuggestionsStep'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -19,18 +22,17 @@ export function SetupWizard({ onComplete, initialHasApiKey }: SetupWizardProps) 
   const hasApiKey = !!preferences?.spoonacular_api_key
   const showApiKeyStep = !initialHasApiKey
 
-  const steps = showApiKeyStep
-    ? [
-        { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
-        { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
-        { key: 'apikey', label: 'API Key', description: 'Recipe discovery' },
-        { key: 'recipes', label: 'Recipes', description: 'Find recipes' },
-      ]
-    : [
-        { key: 'pantry', label: 'Pantry Setup', description: 'Add your ingredients' },
-        { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
-        { key: 'recipes', label: 'Recipes', description: 'Find recipes' },
-      ]
+  const steps = [
+    { key: 'preferences', label: 'Preferences', description: 'Cuisine & diet' },
+    { key: 'suggestions', label: 'Suggestions', description: 'Smart picks' },
+    { key: 'kits', label: 'Kits', description: 'Starter kits' },
+    { key: 'bulk', label: 'Browse', description: 'Add items' },
+    { key: 'import', label: 'Import', description: 'AI import' },
+    ...(showApiKeyStep
+      ? [{ key: 'apikey', label: 'API Key', description: 'Recipe discovery' }]
+      : []),
+    { key: 'recipes', label: 'Recipes', description: 'Find recipes' },
+  ]
 
   const currentKey = steps[currentStep]?.key
 
@@ -65,21 +67,21 @@ export function SetupWizard({ onComplete, initialHasApiKey }: SetupWizardProps) 
         </p>
       </div>
 
-      <nav className="flex items-center justify-center gap-2">
+      <nav className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto px-2">
         {steps.map((step, index) => (
-          <div key={step.key} className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+          <div key={step.key} className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2">
               <div
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors',
+                  'flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm font-medium transition-colors',
                   index < currentStep && 'bg-primary text-primary-foreground',
                   index === currentStep && 'bg-primary text-primary-foreground ring-2 ring-primary/30',
                   index > currentStep && 'bg-muted text-muted-foreground',
                 )}
               >
-                {index < currentStep ? <Check className="size-4" /> : index + 1}
+                {index < currentStep ? <Check className="size-3.5 sm:size-4" /> : index + 1}
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden lg:block">
                 <p className={cn(
                   'text-sm font-medium',
                   index > currentStep && 'text-muted-foreground',
@@ -90,7 +92,7 @@ export function SetupWizard({ onComplete, initialHasApiKey }: SetupWizardProps) 
             </div>
             {index < steps.length - 1 && (
               <div className={cn(
-                'h-px w-8 sm:w-12',
+                'h-px w-4 sm:w-6 lg:w-8',
                 index < currentStep ? 'bg-primary' : 'bg-muted',
               )} />
             )}
@@ -99,8 +101,11 @@ export function SetupWizard({ onComplete, initialHasApiKey }: SetupWizardProps) 
       </nav>
 
       <div className="min-h-[400px]">
-        {currentKey === 'pantry' && <PantrySetupStep onSkip={handleNext} />}
         {currentKey === 'preferences' && <PreferencesStep onSkip={handleNext} />}
+        {currentKey === 'suggestions' && <SmartSuggestionsStep onSkip={handleNext} />}
+        {currentKey === 'kits' && <KitSelectionStep onSkip={handleNext} />}
+        {currentKey === 'bulk' && <BulkAddStep onSkip={handleNext} />}
+        {currentKey === 'import' && <AIImportStep onSkip={handleNext} />}
         {currentKey === 'apikey' && <ApiKeyStep hasApiKey={hasApiKey} updateApiKey={updateApiKey} onSkip={handleNext} />}
         {currentKey === 'recipes' && (hasApiKey ? <RecipeSuggestionsStep /> : <RecipeSuggestionsGated />)}
       </div>
