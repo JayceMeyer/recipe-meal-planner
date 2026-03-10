@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Recipe } from '@/types/database'
+import type { RecipeWithCookbook } from '@/types/database'
 
 interface UseRecipesResult {
-  recipes: Recipe[]
+  recipes: RecipeWithCookbook[]
   loading: boolean
   error: string | null
   refresh: () => Promise<void>
 }
 
 export function useRecipes(): UseRecipesResult {
-  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [recipes, setRecipes] = useState<RecipeWithCookbook[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
@@ -29,7 +29,7 @@ export function useRecipes(): UseRecipesResult {
 
     const { data, error: fetchError } = await supabase
       .from('recipes')
-      .select('*')
+      .select('*, cookbooks(title)')
       .order('created_at', { ascending: false })
 
     if (!isMounted.current) return
@@ -59,7 +59,7 @@ export function useRecipes(): UseRecipesResult {
 
       const { data, error: fetchError } = await supabase
         .from('recipes')
-        .select('*')
+        .select('*, cookbooks(title)')
         .order('created_at', { ascending: false })
 
       if (!isMounted.current) return

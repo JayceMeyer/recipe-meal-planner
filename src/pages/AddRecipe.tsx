@@ -1,12 +1,14 @@
-import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { useState, useRef, type FormEvent } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Camera, Loader2, Upload } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHousehold } from '@/contexts/HouseholdContext'
 import { useScrapeRecipe } from '@/hooks/useScrapeRecipe'
 import { useParseRecipeText } from '@/hooks/useParseRecipeText'
+import { useCookbooks } from '@/hooks/useCookbooks'
 import { useGroups } from '@/hooks/useGroups'
 import { supabase } from '@/lib/supabase'
+import { resizeImage } from '@/utils/imageResize'
 import { GroupSelector } from '@/components/GroupSelector'
 import { InsufficientCreditsAlert } from '@/components/InsufficientCreditsAlert'
 import { Button } from '@/components/ui/button'
@@ -97,7 +99,7 @@ function parseSteps(instructions: string[]): Step[] {
   }))
 }
 
-type ImportMode = 'url' | 'text'
+type ImportMode = 'url' | 'text' | 'cookbook'
 
 export function AddRecipe() {
   const [mode, setMode] = useState<ImportMode>('url')
@@ -108,16 +110,37 @@ export function AddRecipe() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
 
+  const [selectedCookbookId, setSelectedCookbookId] = useState('')
+  const [pageNumber, setPageNumber] = useState('')
+  const [cookbookRecipe, setCookbookRecipe] = useState<ScrapedRecipe | null>(null)
+  const [cookbookUploading, setCookbookUploading] = useState(false)
+  const [cookbookScanning, setCookbookScanning] = useState(false)
+  const [cookbookError, setCookbookError] = useState<string | null>(null)
+  const [cookbookPreview, setCookbookPreview] = useState<string | null>(null)
+  const cookbookFileRef = useRef<HTMLInputElement>(null)
+
   const { user } = useAuth()
   const { household } = useHousehold()
   const { scrape, recipe: scrapeRecipe, loading: scrapeLoading, error: scrapeError, reset: scrapeReset } = useScrapeRecipe()
   const { parse, recipe: parseRecipe, loading: parseLoading, error: parseError, insufficientCredits, reset: parseReset } = useParseRecipeText()
+  const { cookbooks } = useCookbooks()
   const { groups, createGroup } = useGroups()
   const navigate = useNavigate()
 
-  const recipe: ScrapedRecipe | null = mode === 'url' ? scrapeRecipe : parseRecipe
-  const loading = mode === 'url' ? scrapeLoading : parseLoading
-  const error = mode === 'url' ? scrapeError : parseError
+  const recipe: ScrapedRecipe | null =
+    mode === 'url' ? scrapeRecipe :
+    mode === 'text' ? parseRecipe :
+    cookbookRecipe
+
+  const loading =
+    mode === 'url' ? scrapeLoading :
+    mode === 'text' ? parseLoading :
+    cookbookUploading || cookbookScanning
+
+  const error =
+    mode === 'url' ? scrapeError :
+    mode === 'text' ? parseError :
+    cookbookError
 
   const effectiveTitle = titleOverride ?? recipe?.title ?? ''
 
@@ -131,6 +154,74 @@ export function AddRecipe() {
     e.preventDefault()
     setSaveError(null)
     await parse(text)
+  }
+
+  const handleCookbookPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !household) return
+
+    setCookbookError(null)
+    setCookbookUploading(true)
+
+    try {
+      const previewUrl = URL.createObjectURL(file)
+      setCookbookPreview(previewUrl)
+
+      const resized = await resizeImage(file)
+      const fileName = `${household.id}/${crypto.randomUUID()}.webp`
+
+      const { error: uploadError } = await supabase.storage
+        .from('pantry-scans')
+        .upload(fileName, resized, { contentType: 'image/webp' })
+
+      if (uploadError) {
+        setCookbookError(uploadError.message)
+        setCookbookUploading(false)
+        return
+      }
+
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('pantry-scans')
+        .createSignedUrl(fileName, 300)
+
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        setCookbookError(signedUrlError?.message || 'Failed to create signed URL')
+        setCookbookUploading(false)
+        return
+      }
+
+      setCookbookUploading(false)
+      setCookbookScanning(true)
+
+      const { data, error: invokeError } = await supabase.functions.invoke('parse-cookbook-image', {
+        body: {
+          householdId: household.id,
+          imageUrl: signedUrlData.signedUrl,
+        },
+      })
+
+      setCookbookScanning(false)
+
+      if (invokeError) {
+        setCookbookError(invokeError.message)
+        return
+      }
+
+      if (!data?.success) {
+        setCookbookError(data?.error || 'Failed to parse cookbook page')
+        return
+      }
+
+      setCookbookRecipe(data.recipe as ScrapedRecipe)
+
+      supabase.storage.from('pantry-scans').remove([fileName]).catch(() => {})
+    } catch (err) {
+      setCookbookError((err as Error).message)
+      setCookbookUploading(false)
+      setCookbookScanning(false)
+    }
+
+    if (cookbookFileRef.current) cookbookFileRef.current.value = ''
   }
 
   const handleSave = async () => {
@@ -149,6 +240,8 @@ export function AddRecipe() {
       cook_time: recipe.total_time,
       ingredients: parseIngredients(recipe.ingredients),
       steps: parseSteps(recipe.instructions),
+      ...(mode === 'cookbook' && selectedCookbookId && { cookbook_id: selectedCookbookId }),
+      ...(mode === 'cookbook' && pageNumber && { cookbook_page_number: parseInt(pageNumber, 10) }),
     }
 
     const { data, error: insertError } = await supabase
@@ -180,6 +273,10 @@ export function AddRecipe() {
     setSelectedGroupIds([])
     scrapeReset()
     parseReset()
+    setCookbookRecipe(null)
+    setCookbookError(null)
+    if (cookbookPreview) URL.revokeObjectURL(cookbookPreview)
+    setCookbookPreview(null)
   }
 
   const handleModeSwitch = (newMode: ImportMode) => {
@@ -188,37 +285,32 @@ export function AddRecipe() {
     setMode(newMode)
   }
 
+  const modeButton = (m: ImportMode, label: string) => (
+    <button
+      type="button"
+      onClick={() => handleModeSwitch(m)}
+      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+        mode === m
+          ? 'bg-background text-foreground shadow-sm'
+          : 'text-muted-foreground hover:text-foreground'
+      }`}
+    >
+      {label}
+    </button>
+  )
+
   return (
     <div className="container max-w-2xl py-8">
       <Card>
         <CardHeader>
           <CardTitle>Add Recipe</CardTitle>
           <CardDescription>
-            Import a recipe from a URL or paste recipe text
+            Import a recipe from a URL, text, or cookbook photo
           </CardDescription>
           <div className="flex gap-1 rounded-lg bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('url')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === 'url'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              From URL
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeSwitch('text')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                mode === 'text'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              From Text
-            </button>
+            {modeButton('url', 'From URL')}
+            {modeButton('text', 'From Text')}
+            {modeButton('cookbook', 'From Cookbook')}
           </div>
         </CardHeader>
 
@@ -259,7 +351,7 @@ export function AddRecipe() {
                 </Button>
               </CardFooter>
             </form>
-          ) : (
+          ) : mode === 'text' ? (
             <form onSubmit={handleParse} className="flex flex-col gap-6">
               <CardContent className="space-y-4">
                 {insufficientCredits ? (
@@ -297,6 +389,113 @@ export function AddRecipe() {
                 </Button>
               </CardFooter>
             </form>
+          ) : (
+            <div className="flex flex-col gap-6">
+              <CardContent className="space-y-4">
+                {error === 'insufficient_credits' ? (
+                  <InsufficientCreditsAlert />
+                ) : error && (
+                  <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label htmlFor="cookbook-select" className="text-sm font-medium">
+                    Cookbook
+                  </label>
+                  {cookbooks.length > 0 ? (
+                    <select
+                      id="cookbook-select"
+                      value={selectedCookbookId}
+                      onChange={(e) => setSelectedCookbookId(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      disabled={loading}
+                    >
+                      <option value="">Select a cookbook...</option>
+                      {cookbooks.map((cb) => (
+                        <option key={cb.id} value={cb.id}>
+                          {cb.title}{cb.author ? ` — ${cb.author}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No cookbooks yet.{' '}
+                      <Link to="/cookbooks" className="text-primary underline">Add one first</Link>.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="page-number" className="text-sm font-medium">
+                    Page Number (optional)
+                  </label>
+                  <Input
+                    id="page-number"
+                    type="number"
+                    min="1"
+                    value={pageNumber}
+                    onChange={(e) => setPageNumber(e.target.value)}
+                    placeholder="42"
+                    disabled={loading}
+                  />
+                </div>
+
+                {cookbookPreview && (
+                  <div className="rounded-lg overflow-hidden border">
+                    <img src={cookbookPreview} alt="Cookbook page" className="w-full max-h-48 object-cover" />
+                  </div>
+                )}
+
+                {loading ? (
+                  <div className="flex flex-col items-center gap-2 py-8">
+                    <Loader2 className="size-8 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      {cookbookUploading ? 'Uploading photo...' : 'Reading recipe from photo...'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <input
+                      ref={cookbookFileRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleCookbookPhoto}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-24 border-dashed"
+                      onClick={() => cookbookFileRef.current?.click()}
+                      disabled={!selectedCookbookId}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <Camera className="size-6 text-muted-foreground" />
+                        <span className="text-sm">Take Photo of Recipe Page</span>
+                      </div>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!selectedCookbookId}
+                      onClick={() => {
+                        if (cookbookFileRef.current) {
+                          cookbookFileRef.current.removeAttribute('capture')
+                          cookbookFileRef.current.click()
+                          cookbookFileRef.current.setAttribute('capture', 'environment')
+                        }
+                      }}
+                    >
+                      <Upload className="size-4" />
+                      Upload Photo
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </div>
           )
         ) : (
           <>

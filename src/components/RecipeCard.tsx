@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
-import { Clock, Sparkles, Star, UtensilsCrossed } from 'lucide-react'
+import { Book, Clock, Sparkles, Star, UtensilsCrossed } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { GroupBadge } from '@/components/GroupBadge'
-import type { Recipe, RecipeGroup } from '@/types/database'
+import type { RecipeGroup, RecipeWithCookbook } from '@/types/database'
 
 interface RecipeCardProps {
-  recipe: Recipe
+  recipe: RecipeWithCookbook
   groups?: RecipeGroup[]
 }
 
@@ -37,6 +37,12 @@ export function RecipeCard({ recipe, groups = [] }: RecipeCardProps) {
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 shrink-0">
                 <Sparkles className="size-3" />
                 AI
+              </span>
+            )}
+            {recipe.cookbooks && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 shrink-0 max-w-[120px] truncate">
+                <Book className="size-3 shrink-0" />
+                {recipe.cookbooks.title}
               </span>
             )}
           </div>

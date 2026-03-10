@@ -134,6 +134,46 @@ export interface Database {
           }
         ]
       }
+      cookbooks: {
+        Row: {
+          id: string
+          household_id: string
+          title: string
+          author: string | null
+          isbn: string | null
+          cover_image_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          title: string
+          author?: string | null
+          isbn?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          title?: string
+          author?: string | null
+          isbn?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'cookbooks_household_id_fkey'
+            columns: ['household_id']
+            referencedRelation: 'households'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       recipes: {
         Row: {
           id: string
@@ -152,6 +192,8 @@ export interface Database {
           rating: number | null
           cuisine: string[]
           source: string | null
+          cookbook_id: string | null
+          cookbook_page_number: number | null
           created_at: string
           updated_at: string
         }
@@ -172,6 +214,8 @@ export interface Database {
           rating?: number | null
           cuisine?: string[]
           source?: string | null
+          cookbook_id?: string | null
+          cookbook_page_number?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -192,6 +236,8 @@ export interface Database {
           rating?: number | null
           cuisine?: string[]
           source?: string | null
+          cookbook_id?: string | null
+          cookbook_page_number?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -206,6 +252,12 @@ export interface Database {
             foreignKeyName: 'recipes_household_id_fkey'
             columns: ['household_id']
             referencedRelation: 'households'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'recipes_cookbook_id_fkey'
+            columns: ['cookbook_id']
+            referencedRelation: 'cookbooks'
             referencedColumns: ['id']
           }
         ]
@@ -940,3 +992,11 @@ export type PantryKitItem = Tables<'pantry_kit_items'>
 export type PantryKitItemInsert = TablesInsert<'pantry_kit_items'>
 
 export type CuisineIngredientMapping = Tables<'cuisine_ingredient_mappings'>
+
+export type Cookbook = Tables<'cookbooks'>
+export type CookbookInsert = TablesInsert<'cookbooks'>
+export type CookbookUpdate = TablesUpdate<'cookbooks'>
+
+export type RecipeWithCookbook = Recipe & {
+  cookbooks: { title: string } | null
+}

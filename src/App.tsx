@@ -20,6 +20,7 @@ import { Groups } from '@/pages/Groups'
 import { Pantry } from '@/pages/Pantry'
 import { Discover } from '@/pages/Discover'
 import { MealPlan } from '@/pages/MealPlan'
+import { Cookbooks } from '@/pages/Cookbooks'
 import { JoinHousehold } from '@/pages/JoinHousehold'
 import { AdminOverview } from '@/pages/admin/Overview'
 import { AdminUsersPage } from '@/pages/admin/UsersPage'
@@ -53,6 +54,7 @@ function App() {
             <Route path="/meal-plan" element={<MealPlan />} />
             <Route path="/pantry" element={<Pantry />} />
             <Route path="/discover" element={<Discover />} />
+            <Route path="/cookbooks" element={<Cookbooks />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile" element={<Profile />} />
             <Route
