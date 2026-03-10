@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, BookOpen, ShoppingCart, User, Package, Sparkles, CalendarDays, Shield } from 'lucide-react'
+import { Home, BookOpen, ShoppingCart, User, Package, Sparkles, CalendarDays, Shield, Library } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUserRole } from '@/hooks/useUserRole'
 
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/recipes', icon: BookOpen, label: 'Recipes' },
   { to: '/meal-plan', icon: CalendarDays, label: 'Meal Plan' },
   { to: '/discover', icon: Sparkles, label: 'Discover' },
+  { to: '/cookbooks', icon: Library, label: 'Cookbooks' },
   { to: '/pantry', icon: Package, label: 'Pantry' },
   { to: '/grocery', icon: ShoppingCart, label: 'Grocery' },
   { to: '/profile', icon: User, label: 'Profile' },
