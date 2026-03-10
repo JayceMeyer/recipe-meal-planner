@@ -3,8 +3,27 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { RecipeDetail } from './RecipeDetail'
-import '@/test/mocks/supabase'
 import type { Recipe } from '@/types/database'
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+    storage: {
+      from: vi.fn().mockReturnValue({
+        upload: vi.fn().mockResolvedValue({ data: { path: 'test.jpg' }, error: null }),
+        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/test.jpg' } }),
+      }),
+    },
+  },
+}))
 
 vi.mock('@/contexts/HouseholdContext', () => ({
   useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
@@ -69,6 +88,19 @@ vi.mock('@/hooks/useRecipeNotes', () => ({
 
 vi.mock('@/components/AddToGroceryList', () => ({
   AddToGroceryList: () => null,
+}))
+
+vi.mock('@/components/AddToMealPlan', () => ({
+  AddToMealPlan: () => null,
+}))
+
+vi.mock('@/hooks/useGroups', () => ({
+  useGroups: () => ({ groups: [], loading: false, error: null, createGroup: vi.fn(), updateGroup: vi.fn(), deleteGroup: vi.fn(), refresh: vi.fn() }),
+  useRecipeGroups: () => ({ groupIds: [], loading: false, error: null, addToGroup: vi.fn(), removeFromGroup: vi.fn(), setGroups: vi.fn() }),
+}))
+
+vi.mock('@/hooks/useImageUpload', () => ({
+  useImageUpload: () => ({ uploadImage: vi.fn(), isUploading: false }),
 }))
 
 vi.mock('react-router-dom', async () => {
@@ -201,7 +233,10 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    await user.click(screen.getAllByRole('button')[1])
+    const deleteButton = screen.getAllByRole('button').find(
+      (btn) => btn.querySelector('.lucide-trash-2')
+    )!
+    await user.click(deleteButton)
 
     expect(screen.getByText(/are you sure you want to delete/i)).toBeInTheDocument()
   })
@@ -210,7 +245,10 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    await user.click(screen.getAllByRole('button')[1])
+    const deleteBtn = screen.getAllByRole('button').find(
+      (btn) => btn.querySelector('.lucide-trash-2')
+    )!
+    await user.click(deleteBtn)
     await user.click(screen.getByRole('button', { name: /^delete$/i }))
 
     await waitFor(() => {
@@ -223,7 +261,10 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    await user.click(screen.getAllByRole('button')[1])
+    const deleteBtn = screen.getAllByRole('button').find(
+      (btn) => btn.querySelector('.lucide-trash-2')
+    )!
+    await user.click(deleteBtn)
     await user.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(screen.queryByText(/are you sure you want to delete/i)).not.toBeInTheDocument()

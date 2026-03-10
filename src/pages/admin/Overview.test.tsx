@@ -1,8 +1,10 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const mockSelect = vi.fn()
-const mockFrom = vi.fn()
+const { mockSelect, mockFrom } = vi.hoisted(() => ({
+  mockSelect: vi.fn(),
+  mockFrom: vi.fn(),
+}))
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {

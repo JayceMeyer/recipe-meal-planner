@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { AddRecipe } from './AddRecipe'
-import '@/test/mocks/supabase'
 
 vi.mock('@/contexts/HouseholdContext', () => ({
   useHousehold: () => ({ household: { id: 'household-1', name: 'Test Kitchen' }, members: [], loading: false, isOwner: true }),
@@ -12,7 +11,10 @@ vi.mock('@/contexts/HouseholdContext', () => ({
 const mockScrape = vi.fn()
 const mockReset = vi.fn()
 const mockNavigate = vi.fn()
-const mockInsert = vi.fn()
+
+const { mockInsertSingle } = vi.hoisted(() => ({
+  mockInsertSingle: vi.fn().mockResolvedValue({ data: { id: 'new-recipe-id' }, error: null }),
+}))
 
 const mockRecipe = {
   title: 'Test Recipe',
@@ -42,6 +44,33 @@ vi.mock('@/hooks/useScrapeRecipe', () => ({
   useScrapeRecipe: () => mockHookState,
 }))
 
+vi.mock('@/hooks/useParseRecipeText', () => ({
+  useParseRecipeText: () => ({
+    parse: vi.fn(),
+    recipe: null,
+    loading: false,
+    error: null,
+    insufficientCredits: false,
+    reset: vi.fn(),
+  }),
+}))
+
+vi.mock('@/hooks/useCookbooks', () => ({
+  useCookbooks: () => ({ cookbooks: [], loading: false }),
+}))
+
+vi.mock('@/hooks/useGroups', () => ({
+  useGroups: () => ({
+    groups: [],
+    loading: false,
+    error: null,
+    createGroup: vi.fn(),
+    updateGroup: vi.fn(),
+    deleteGroup: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}))
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
   return {
@@ -53,7 +82,11 @@ vi.mock('react-router-dom', async () => {
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: () => ({
-      insert: mockInsert,
+      insert: () => ({
+        select: () => ({
+          single: mockInsertSingle,
+        }),
+      }),
     }),
   },
 }))
@@ -61,7 +94,7 @@ vi.mock('@/lib/supabase', () => ({
 describe('AddRecipe - URL Input Form', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockInsert.mockResolvedValue({ error: null })
+    mockInsertSingle.mockResolvedValue({ data: { id: 'new-recipe-id' }, error: null })
     mockHookState = {
       scrape: mockScrape,
       recipe: null,
@@ -135,7 +168,7 @@ describe('AddRecipe - URL Input Form', () => {
 describe('AddRecipe - Recipe Preview', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockInsert.mockResolvedValue({ error: null })
+    mockInsertSingle.mockResolvedValue({ data: { id: 'new-recipe-id' }, error: null })
     mockHookState = {
       scrape: mockScrape,
       recipe: mockRecipe,
@@ -182,7 +215,7 @@ describe('AddRecipe - Recipe Preview', () => {
     await user.click(screen.getByRole('button', { name: /save recipe/i }))
 
     await waitFor(() => {
-      expect(mockInsert).toHaveBeenCalled()
+      expect(mockInsertSingle).toHaveBeenCalled()
     })
   })
 
@@ -233,7 +266,7 @@ describe('AddRecipe - Recipe Preview', () => {
   })
 
   it('displays save error message', async () => {
-    mockInsert.mockResolvedValue({ error: { message: 'Database error' } })
+    mockInsertSingle.mockResolvedValue({ data: null, error: { message: 'Database error' } })
     const user = userEvent.setup()
 
     render(

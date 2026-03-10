@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const mockRpc = vi.fn().mockResolvedValue({ data: 150, error: null })
+const { mockRpc } = vi.hoisted(() => ({
+  mockRpc: vi.fn().mockResolvedValue({ data: 150, error: null }),
+}))
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {

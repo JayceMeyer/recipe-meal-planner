@@ -2,22 +2,24 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const mockUpdate = vi.fn().mockReturnValue({
-  eq: vi.fn().mockReturnValue({
-    select: vi.fn().mockReturnValue({
-      single: vi.fn().mockResolvedValue({
-        data: {
-          id: 1,
-          ai_markup_percent: 20,
-          signup_bonus_credits: 200,
-          updated_by: 'user-1',
-          updated_at: '2026-03-10T00:00:00Z',
-        },
-        error: null,
+const { mockUpdate } = vi.hoisted(() => ({
+  mockUpdate: vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 1,
+            ai_markup_percent: 20,
+            signup_bonus_credits: 200,
+            updated_by: 'user-1',
+            updated_at: '2026-03-10T00:00:00Z',
+          },
+          error: null,
+        }),
       }),
     }),
   }),
-})
+}))
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
