@@ -601,18 +601,21 @@ export interface Database {
         Row: {
           id: number
           ai_markup_percent: number
+          signup_bonus_credits: number
           updated_by: string | null
           updated_at: string
         }
         Insert: {
           id?: number
           ai_markup_percent?: number
+          signup_bonus_credits?: number
           updated_by?: string | null
           updated_at?: string
         }
         Update: {
           id?: number
           ai_markup_percent?: number
+          signup_bonus_credits?: number
           updated_by?: string | null
           updated_at?: string
         }
@@ -903,6 +906,13 @@ export interface Database {
           p_amount: number
           p_description?: string
           p_metadata?: Json
+        }
+        Returns: number
+      }
+      transfer_household_credits: {
+        Args: {
+          p_source_household: string
+          p_target_household: string
         }
         Returns: number
       }

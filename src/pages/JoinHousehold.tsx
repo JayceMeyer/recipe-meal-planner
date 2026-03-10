@@ -25,6 +25,7 @@ export function JoinHousehold() {
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [creditsTransferred, setCreditsTransferred] = useState<number>(0)
 
   useEffect(() => {
     if (authLoading) return
@@ -122,6 +123,27 @@ export function JoinHousehold() {
       .update({ status: 'accepted' })
       .eq('id', invite.id)
 
+    const { data: currentMembership } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .neq('household_id', invite.household_id)
+      .limit(1)
+      .single()
+
+    if (currentMembership) {
+      const { data: transferred } = await supabase.rpc(
+        'transfer_household_credits',
+        {
+          p_source_household: currentMembership.household_id,
+          p_target_household: invite.household_id,
+        }
+      )
+      if (transferred && transferred > 0) {
+        setCreditsTransferred(transferred)
+      }
+    }
+
     setSuccess(true)
     setJoining(false)
 
@@ -204,10 +226,15 @@ export function JoinHousehold() {
               Welcome!
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <p className="text-sm text-muted-foreground">
               You've joined <strong>{invite?.household_name}</strong>. Redirecting...
             </p>
+            {creditsTransferred > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {creditsTransferred} credits were transferred to your new household.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
