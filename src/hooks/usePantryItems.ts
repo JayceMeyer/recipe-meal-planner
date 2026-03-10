@@ -91,8 +91,8 @@ export function usePantryItems(): UsePantryItemsResult {
   )
 
   const updateItem = useCallback(
-    async (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string }): Promise<boolean> => {
-      const updateData: Record<string, string | null | undefined> = { ...updates }
+    async (id: string, updates: { ingredient_name?: string; quantity?: string; unit?: string; category?: string; is_staple?: boolean; staple_threshold?: string; staple_unit?: string }): Promise<boolean> => {
+      const updateData: Record<string, string | boolean | null | undefined> = { ...updates }
 
       if (updates.ingredient_name && !updates.category) {
         updateData.category = categorizeIngredient(updates.ingredient_name)

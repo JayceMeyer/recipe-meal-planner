@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Loader2, Plus, Package, Search, Save } from 'lucide-react'
+import { ChevronDown, ChevronRight, Loader2, Pin, Plus, Package, Search, Save } from 'lucide-react'
 import { usePantryItems } from '@/hooks/usePantryItems'
 import { usePantrySuggestions } from '@/hooks/usePantrySuggestions'
 import { usePantryKits } from '@/hooks/usePantryKits'
@@ -37,6 +37,7 @@ export function Pantry() {
   const [searchQuery, setSearchQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [showStaplesOnly, setShowStaplesOnly] = useState(false)
   const [showKits, setShowKits] = useState(false)
   const [showSaveKit, setShowSaveKit] = useState(false)
   const [saveKitName, setSaveKitName] = useState('')
@@ -77,18 +78,31 @@ export function Pantry() {
     return result
   }, [items])
 
+  const stapleCount = useMemo(() => items.filter((i) => i.is_staple).length, [items])
+
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return groups
-    const query = searchQuery.toLowerCase()
-    return groups
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) =>
-          item.ingredient_name.toLowerCase().includes(query),
-        ),
-      }))
-      .filter((group) => group.items.length > 0)
-  }, [groups, searchQuery])
+    let filtered = groups
+    if (showStaplesOnly) {
+      filtered = filtered
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => item.is_staple),
+        }))
+        .filter((group) => group.items.length > 0)
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) =>
+            item.ingredient_name.toLowerCase().includes(query),
+          ),
+        }))
+        .filter((group) => group.items.length > 0)
+    }
+    return filtered
+  }, [groups, searchQuery, showStaplesOnly])
 
   const autoCategory = newItemName.trim() ? categorizeIngredient(newItemName.trim()) : ''
   const selectedCategory = newItemCategory || autoCategory
@@ -163,6 +177,17 @@ export function Pantry() {
               </p>
             </div>
             <div className="flex gap-2">
+              {stapleCount > 0 && (
+                <Button
+                  variant={showStaplesOnly ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowStaplesOnly((v) => !v)}
+                >
+                  <Pin className="size-4" />
+                  <span className="hidden sm:inline">Staples</span>
+                  <span className="text-xs">({stapleCount})</span>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
