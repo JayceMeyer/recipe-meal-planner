@@ -233,10 +233,7 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    const deleteButton = screen.getAllByRole('button').find(
-      (btn) => btn.querySelector('.lucide-trash-2')
-    )!
-    await user.click(deleteButton)
+    await user.click(screen.getByRole('button', { name: /delete recipe/i }))
 
     expect(screen.getByText(/are you sure you want to delete/i)).toBeInTheDocument()
   })
@@ -245,10 +242,7 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    const deleteBtn = screen.getAllByRole('button').find(
-      (btn) => btn.querySelector('.lucide-trash-2')
-    )!
-    await user.click(deleteBtn)
+    await user.click(screen.getByRole('button', { name: /delete recipe/i }))
     await user.click(screen.getByRole('button', { name: /^delete$/i }))
 
     await waitFor(() => {
@@ -261,10 +255,7 @@ describe('RecipeDetail - With Recipe', () => {
     const user = userEvent.setup()
     renderWithRouter()
 
-    const deleteBtn = screen.getAllByRole('button').find(
-      (btn) => btn.querySelector('.lucide-trash-2')
-    )!
-    await user.click(deleteBtn)
+    await user.click(screen.getByRole('button', { name: /delete recipe/i }))
     await user.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(screen.queryByText(/are you sure you want to delete/i)).not.toBeInTheDocument()

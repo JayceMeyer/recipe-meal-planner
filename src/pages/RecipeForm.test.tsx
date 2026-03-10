@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { RecipeForm } from './RecipeForm'
-import '@/test/mocks/supabase'
 import type { Recipe } from '@/types/database'
 
 vi.mock('@/contexts/HouseholdContext', () => ({

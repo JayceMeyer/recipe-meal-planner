@@ -226,6 +226,7 @@ export function RecipeDetail() {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Delete recipe"
                   onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash2 className="size-4" />
